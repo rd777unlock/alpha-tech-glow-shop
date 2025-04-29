@@ -15,6 +15,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "../hooks/use-toast";
 import { Loader2, LockIcon, CreditCard, CheckIcon, AlertTriangle, ArrowLeft, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "../hooks/use-mobile";
 
 // Create a schema for the form validation
 const formSchema = z.object({
@@ -40,12 +41,32 @@ enum CheckoutStep {
   Confirmation = 2
 }
 
+type PaymentStatus = "pending" | "processing" | "approved" | "rejected";
+
+interface PaymentDetails {
+  qrCodeImage?: string;
+  qrCodeText?: string;
+  barcode?: string;
+  boletoUrl?: string;
+  expiresAt?: string;
+}
+
+interface PaymentInfo {
+  id: string;
+  status: PaymentStatus;
+  method: string;
+  details: PaymentDetails;
+}
+
 const Checkout = () => {
   const { cartItems, getCartTotal, clearCart } = useCart();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [currentStep, setCurrentStep] = useState<CheckoutStep>(CheckoutStep.PersonalData);
-  const [orderNumber, setOrderNumber] = useState<string>(`ALF${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`);
+  const [orderNumber, setOrderNumber] = useState<string>("");
+  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
+  const isMobile = useIsMobile();
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -72,6 +93,9 @@ const Checkout = () => {
     if (cartItems.length === 0) {
       navigate("/cart");
     }
+    
+    // Generate a new order number each time the component mounts
+    setOrderNumber(`ALF${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`);
   }, [cartItems, navigate]);
   
   const formatPrice = (price: number) => {
@@ -116,58 +140,133 @@ const Checkout = () => {
     }
   };
   
-  // Simulate payment processing
+  // Verify payment status with the payment API
+  const verifyPayment = async () => {
+    setVerifyingPayment(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-payment', {
+        body: {
+          paymentId: orderNumber,
+          paymentMethod: paymentMethod
+        }
+      });
+      
+      if (error) throw new Error(error.message);
+      
+      if (data.success && data.payment) {
+        setPaymentInfo(data.payment);
+        
+        if (data.payment.status === "approved") {
+          // Send confirmation email
+          sendConfirmationEmail();
+          
+          // Clear cart and redirect to success page
+          setTimeout(() => {
+            clearCart();
+            navigate("/checkout/success", { 
+              state: { 
+                orderNumber,
+                paymentMethod,
+                total: getCartTotal()
+              } 
+            });
+          }, 1500);
+        }
+      }
+    } catch (error) {
+      console.error("Error verifying payment:", error);
+      toast({
+        title: "Erro ao verificar pagamento",
+        description: "Ocorreu um erro ao verificar o status do pagamento. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setVerifyingPayment(false);
+    }
+  };
+  
+  // Send confirmation email
+  const sendConfirmationEmail = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('send-confirmation-email', {
+        body: {
+          email: getValues("email"),
+          name: getValues("name"),
+          orderNumber: orderNumber,
+          totalAmount: getCartTotal(),
+          paymentMethod: getValues("paymentMethod"),
+          items: cartItems.map(item => ({
+            name: item.product.name,
+            quantity: item.quantity,
+            price: item.product.discount 
+              ? Math.round(item.product.price * (1 - item.product.discount / 100))
+              : item.product.price
+          }))
+        }
+      });
+      
+      if (error) {
+        console.error("Error sending confirmation email:", error);
+      }
+    } catch (error) {
+      console.error("Failed to send confirmation email:", error);
+    }
+  };
+  
+  // Process payment
   const processPayment = async (data: FormData) => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Attempt to send confirmation email
-      try {
-        const { error } = await supabase.functions.invoke('send-confirmation-email', {
-          body: {
-            email: data.email,
-            name: data.name,
-            orderNumber: orderNumber,
-            totalAmount: getCartTotal(),
-            paymentMethod: data.paymentMethod,
-            items: cartItems.map(item => ({
-              name: item.product.name,
-              quantity: item.quantity,
-              price: item.product.discount 
-                ? Math.round(item.product.price * (1 - item.product.discount / 100))
-                : item.product.price
-            }))
-          }
-        });
+      // For credit card payments, we'll simulate an immediate response
+      if (data.paymentMethod === "credit") {
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
-        if (error) {
-          console.error("Error sending confirmation email:", error);
+        // Here we would normally make a call to the payment processor API
+        // For demo purposes, we'll simulate a successful payment
+        const isApproved = Math.random() > 0.2; // 80% chance of success
+        
+        if (isApproved) {
+          // Send confirmation email
+          await sendConfirmationEmail();
+          
+          toast({
+            title: "Pagamento aprovado!",
+            description: "Seu pedido foi confirmado com sucesso.",
+          });
+          
+          // Clear the cart
+          clearCart();
+          
+          // Redirect to success page
+          navigate("/checkout/success", { 
+            state: { 
+              orderNumber,
+              paymentMethod: data.paymentMethod,
+              total: getCartTotal()
+            } 
+          });
+        } else {
+          toast({
+            title: "Pagamento recusado",
+            description: "Seu cartão foi recusado. Por favor, tente outro método de pagamento.",
+            variant: "destructive",
+          });
+          setCurrentStep(CheckoutStep.Payment);
         }
-      } catch (emailError) {
-        console.error("Failed to send confirmation email:", emailError);
+      } else {
+        // For Pix and Boleto, verify the payment status
+        await verifyPayment();
       }
-      
-      // For demo purposes, pretend the payment was processed successfully
-      toast({
-        title: "Pagamento processado com sucesso!",
-        description: "Seu pedido foi confirmado.",
-      });
-      
-      // Clear the cart after successful checkout
-      clearCart();
-      
-      // Redirect to success page
-      navigate("/checkout/success");
     } catch (error) {
+      console.error("Payment processing error:", error);
       toast({
         title: "Erro no processamento do pagamento",
         description: "Por favor, tente novamente ou use outro método de pagamento.",
         variant: "destructive",
       });
-      setCurrentStep(CheckoutStep.Payment);
     } finally {
       setIsSubmitting(false);
     }
@@ -281,7 +380,7 @@ const Checkout = () => {
                               <FormItem>
                                 <FormLabel>Telefone</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="(11) 99999-9999" {...field} />
+                                  <Input placeholder="(13) 99611-4479" {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -539,6 +638,80 @@ const Checkout = () => {
                           <h2 className="text-xl text-white font-medium mb-6">Confirmação do Pedido</h2>
                           
                           <div className="space-y-6">
+                            {paymentInfo && paymentInfo.method === "pix" && paymentInfo.details.qrCodeImage && (
+                              <div className="bg-alphadark rounded-lg p-4">
+                                <h3 className="text-white font-medium mb-3 text-center">Pagamento via PIX</h3>
+                                <div className="flex flex-col items-center">
+                                  <img 
+                                    src={paymentInfo.details.qrCodeImage} 
+                                    alt="QR Code PIX" 
+                                    className="w-48 h-48 mb-4"
+                                  />
+                                  <div className="bg-gray-800 p-3 rounded mb-4 w-full overflow-hidden">
+                                    <p className="text-gray-300 text-sm mb-1">Código PIX copia e cola:</p>
+                                    <p className="text-white text-xs font-mono break-all">{paymentInfo.details.qrCodeText}</p>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full mb-4"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(paymentInfo.details.qrCodeText || "");
+                                      toast({
+                                        title: "Código copiado!",
+                                        description: "Cole o código no aplicativo do seu banco.",
+                                      });
+                                    }}
+                                  >
+                                    Copiar código
+                                  </Button>
+                                  <div className="flex items-center text-sm text-yellow-500">
+                                    <AlertTriangle className="h-4 w-4 mr-2" />
+                                    <p>Este QR Code expira em 30 minutos</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {paymentInfo && paymentInfo.method === "boleto" && paymentInfo.details.barcode && (
+                              <div className="bg-alphadark rounded-lg p-4">
+                                <h3 className="text-white font-medium mb-3 text-center">Pagamento via Boleto</h3>
+                                <div className="flex flex-col items-center">
+                                  <div className="bg-gray-800 p-3 rounded mb-4 w-full">
+                                    <p className="text-gray-300 text-sm mb-1">Código de barras:</p>
+                                    <p className="text-white text-xs font-mono break-all">{paymentInfo.details.barcode}</p>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full mb-4"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(paymentInfo.details.barcode || "");
+                                      toast({
+                                        title: "Código copiado!",
+                                        description: "Cole o código no aplicativo do seu banco.",
+                                      });
+                                    }}
+                                  >
+                                    Copiar código de barras
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    className="w-full bg-alphablue hover:bg-alphablue/80 mb-4"
+                                    onClick={() => {
+                                      window.open(paymentInfo.details.boletoUrl, '_blank');
+                                    }}
+                                  >
+                                    Abrir boleto para impressão
+                                  </Button>
+                                  <div className="flex items-center text-sm text-yellow-500">
+                                    <AlertTriangle className="h-4 w-4 mr-2" />
+                                    <p>O boleto vence em 3 dias úteis</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            
                             <div className="bg-alphadark rounded-lg p-4">
                               <h3 className="text-white font-medium mb-3">Dados de Entrega</h3>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -669,25 +842,44 @@ const Checkout = () => {
                                 variant="outline"
                                 onClick={handlePreviousStep}
                                 className="py-3 px-6 rounded-lg h-auto flex items-center"
+                                disabled={isSubmitting || verifyingPayment}
                               >
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 Voltar: Pagamento
                               </Button>
                               
-                              <Button
-                                type="submit"
-                                className="bg-gradient-tech text-white font-medium py-6 rounded-lg h-auto hover:opacity-90 transition-opacity"
-                                disabled={isSubmitting}
-                              >
-                                {isSubmitting ? (
-                                  <>
-                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                    Processando pagamento...
-                                  </>
-                                ) : (
-                                  `Finalizar Pedido (${formatPrice(getCartTotal())})`
-                                )}
-                              </Button>
+                              {paymentInfo && (paymentMethod === "pix" || paymentMethod === "boleto") ? (
+                                <Button
+                                  type="button"
+                                  className="bg-green-600 text-white font-medium py-3 px-6 rounded-lg h-auto hover:bg-green-700 transition-colors"
+                                  disabled={verifyingPayment}
+                                  onClick={verifyPayment}
+                                >
+                                  {verifyingPayment ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                      Verificando pagamento...
+                                    </>
+                                  ) : (
+                                    "Verificar pagamento"
+                                  )}
+                                </Button>
+                              ) : (
+                                <Button
+                                  type="submit"
+                                  className="bg-gradient-tech text-white font-medium py-6 rounded-lg h-auto hover:opacity-90 transition-opacity"
+                                  disabled={isSubmitting}
+                                >
+                                  {isSubmitting ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                      Processando pagamento...
+                                    </>
+                                  ) : (
+                                    `Finalizar Pedido (${formatPrice(getCartTotal())})`
+                                  )}
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </>
@@ -774,6 +966,21 @@ const Checkout = () => {
                       <CheckIcon className="h-4 w-4 mr-1" />
                       Enviamos para todo o Brasil
                     </p>
+                  </div>
+
+                  {/* WhatsApp button */}
+                  <div className="mt-4">
+                    <a 
+                      href={`https://wa.me/5513996114479?text=Olá! Gostaria de finalizar minha compra pelo WhatsApp para ganhar 15% de desconto. Pedido: ${orderNumber}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                    >
+                      <svg viewBox="0 0 32 32" className="h-5 w-5 fill-current">
+                        <path d=" M19.11 17.205c-.372 0-1.088 1.39-1.518 1.39a.63.63 0 0 1-.315-.1c-.802-.402-1.504-.817-2.163-1.447-.545-.516-1.146-1.29-1.46-1.963a.426.426 0 0 1 .09-.362c.124-.124.267-.143.466-.143.954 0 .54.208.712.372.45.43.683.873.876 1.117.212.202.62.634. 223a.22.22 0 0 0 .313-.287c.142-.226.454-1.086.584-1.593. 13-.11.212-.325.232-.52.02-.208-.117-.312-.244-.397.127-.127.574-.6. 574-1.28a1.13 1.13 0 0 0-.373-.8 1.525 1.525 0 0 0-1.069-.402c-.215 0-.421.021-.595.098-.454.210-.575.684-.576.8-.032.1. 81a4. 14 4.14 0 0 1-1.19 2.962c-.312.312-.494.587-.57.622. 776-.158 1.321-.51 1.72-.884.52-.514 1.055-1.167 1.586-1.7. 586-1.194.922-1.015 1.276-.15.22.21. 423a.53.53 0 0 0-.486.405.48.48 0 0 0 .149.390c.196.22.46.41. 73.58a.578.578 0 0 0-.168.393c0 .241.123.362.44.382.152.010.297-.013.427-.06l.111.11c.264.18.5.6.5 1.06a.488.488 0 0 1-.192.392c-.2.2-.5.16-.76.16a.5.5 0 0 1-.212-.049c-.13-.04-.295-.12-.348-.14-1.134-.173-2.432-.809-2.813-1.033a10.477 10.477 0 0 1-1.828 1.137c-.389.24-.68.36-.744.36-.5.033-.124.164-.163.312-.153.565-.389.752a3.5a.25 0 0 1 .243.088.33.33 0 0 1 0 .392c-.117.210-.03.431.046.614.24.571.366 1.025.442 1.373a.3.3 0 0 1-.283.363zM16 30a14 14 0 0 1-7.223-1.998c-.52-.202-.952-.398-1.326-.63-.75-.365-1.505-.94-1.163-1.69.056-.119.328-.414.625-.621 3.948-2.577 6.194-5.885 6.55-9.648a.324.324 0 0 0-.156-.284.3.3 0 0 0-.322.052c-.126.126-.167.367-.167.57 0 1.657-1.682 1.907-2.5 1.695-.92-.198-1.116-.414-1.214-.55-.094-.13-.052-.26-.086-.425-.062-.292-.156-.465-.499-.465-.59 0-1.417.82-1.417 1.977a2.46 2.46 0 0 0 .59 1.587c.384.384 1.053.885 2.102.885.24 0 .463-.053.667-.16.477-.135.814-.372.748-.63-.35-.13-.21-.288-.592-.288-.124 0-.249.042-.397.066a.732.732 0 0 1-.176.02.399.399 0 0 1-.264-.095c-.176-.16-.173-.386.122-.532.468-.227 1.11-.228 1.585 0 .473.228.87.845.283 1.264.567.405 1.41.701 2.407.701 1.005 0 1.855-.303 2.427-.716.158-.433.556-1.066 1.028-1.295.474-.239 1.116-.223 1.582.016.15.078.226.272.124.426-.103.123-.25.19-.416.147-.107-.034-.21-.064-.334-.064-.381 0-.558.202-.563.304-.064.258.303.483.777.618.206.108.43.16.67.16 1.048 0 1.717-.5 2.102-.885a2.49 2.49 0 0 0 .587-1.587c0-1.154-.825-1.977-1.416-1.977-.342 0-.443.173-.455.465-1.04.212-.29.301-.16.431-.98.136-.293.352-1.215.55a1.88 1.88 0 0 1-.365.035c-.883 0-1.932-.462-1.932-1.73 0-.203-.041-.444-.167-.57a.304.304 0 0 0-.322-.052.324.324 0 0 0-.156.284c.356 3.763 2.602 7.07 6.55 9.648.295.197.568.502.624.62.342.76-.413 1.325-1.163 1.69-.374.232-.805.428-1.326.63A14 14 0 0 1 16 30z"/>
+                      </svg>
+                      Comprar pelo WhatsApp (15% OFF)
+                    </a>
                   </div>
                 </div>
               </div>

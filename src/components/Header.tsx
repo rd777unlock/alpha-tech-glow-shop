@@ -7,7 +7,21 @@ import { useCart } from '../context/CartContext';
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { getItemCount } = useCart();
-  const cartItemCount = getItemCount();
+  const [cartItemCount, setCartItemCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+
+  // Update cart count when items change
+  useEffect(() => {
+    setCartItemCount(getItemCount());
+  }, [getItemCount]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // For now, we'll just navigate to the products page
+    // In the future, this could be enhanced to search properly
+    window.location.href = `/produtos?search=${encodeURIComponent(searchQuery)}`;
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-alphadark/80 backdrop-blur-md z-50 border-b border-white/10">
@@ -25,9 +39,31 @@ const Header = () => {
         </nav>
         
         <div className="flex items-center space-x-4">
-          <button className="text-white p-2 rounded-full hover:bg-white/10 transition-colors">
-            <Search size={20} />
-          </button>
+          {showSearch ? (
+            <form onSubmit={handleSearch} className="relative flex items-center">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar produtos..."
+                className="bg-black/30 text-white border border-white/20 rounded-full px-4 py-1 text-sm w-[200px] focus:outline-none"
+              />
+              <button 
+                type="submit"
+                className="absolute right-2 text-white"
+              >
+                <Search size={16} />
+              </button>
+            </form>
+          ) : (
+            <button 
+              className="text-white p-2 rounded-full hover:bg-white/10 transition-colors" 
+              onClick={() => setShowSearch(true)}
+            >
+              <Search size={20} />
+            </button>
+          )}
+          
           <Link to="/cart" className="text-white p-2 rounded-full hover:bg-white/10 transition-colors relative">
             <ShoppingCart size={20} />
             {cartItemCount > 0 && (
@@ -55,7 +91,7 @@ const Header = () => {
             <Link to="/acessorios" className="text-white py-2 hover:text-gradient font-medium">Acessórios</Link>
             <Link to="/about" className="text-white py-2 hover:text-gradient font-medium">Sobre</Link>
             <Link to="/support" className="text-white py-2 hover:text-gradient font-medium">Suporte</Link>
-            <Link to="/admin" className="text-white py-2 hover:text-gradient font-medium">Admin</Link>
+            <Link to="/admin-login" className="text-white py-2 hover:text-gradient font-medium">Admin</Link>
           </div>
         </div>
       )}
