@@ -30,7 +30,7 @@ const Hero = () => {
                 Ver produtos
               </Link>
               <Link 
-                to="/promo" 
+                to="/promocoes" 
                 className="bg-transparent border border-white/30 text-white font-medium py-3 px-6 rounded-full hover:bg-white/10 transition-colors"
               >
                 Promoções
