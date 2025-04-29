@@ -9,7 +9,7 @@ import About from "./pages/About";
 import Support from "./pages/Support";
 import ProductPage from "./pages/ProductPage";
 import NotFound from "./pages/NotFound";
-import iPhones from "./pages/iPhones";
+import IPhones from "./pages/iPhones";
 import Acessorios from "./pages/Acessorios";
 import Cart from "./pages/Cart";
 import Produtos from "./pages/Produtos";
@@ -28,7 +28,7 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/support" element={<Support />} />
           <Route path="/product/:id" element={<ProductPage />} />
-          <Route path="/iphones" element={<iPhones />} />
+          <Route path="/iphones" element={<IPhones />} />
           <Route path="/acessorios" element={<Acessorios />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/produtos" element={<Produtos />} />

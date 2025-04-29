@@ -5,7 +5,7 @@ import ProductGrid from "../components/ProductGrid";
 import products from "../data/products";
 import { useEffect } from "react";
 
-const iPhones = () => {
+const IPhones = () => {
   // Filter products to get only iPhones
   const iPhoneProducts = products.filter(product => product.category === "iPhone");
   
@@ -35,4 +35,4 @@ const iPhones = () => {
   );
 };
 
-export default iPhones;
+export default IPhones;
