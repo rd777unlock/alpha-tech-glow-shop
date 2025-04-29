@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+<<<<<<< HEAD
 import {
   PlusCircle,
   Edit,
@@ -28,12 +29,20 @@ import {
 } from "lucide-react";
 import products, { Product } from "../data/products";
 import { adminService } from "../lib/adminService";
+=======
+import { PlusCircle, Edit, Trash2, BarChart3, Package, ShoppingCart, CreditCard, Users, DollarSign, Mail, AlertTriangle } from "lucide-react";
+import products, { Product } from "../data/products";
+import { useIsMobile } from "../hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
+>>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [productsList, setProductsList] = useState<Product[]>([...products]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [adminEmail, setAdminEmail] = useState("loja.alphatechbr@gmail.com");
+  const [newEmail, setNewEmail] = useState("");
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
     name: "",
     category: "",
@@ -65,7 +74,9 @@ const Admin = () => {
   const [isUpdatingWebhook, setIsUpdatingWebhook] = useState(false);
 
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
+<<<<<<< HEAD
   // useEffect para carregar dados iniciais do service
   useEffect(() => {
     setIsLoading(true);
@@ -78,6 +89,75 @@ const Admin = () => {
       setIsLoading(false);
     })();
   }, []);
+=======
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Check for admin authentication in localStorage
+        const isAdmin = localStorage.getItem('adminAuthenticated') === 'true';
+        const storedEmail = localStorage.getItem('adminEmail');
+        
+        if (isAdmin && storedEmail) {
+          setIsAuthenticated(true);
+          setAdminEmail(storedEmail);
+        } else {
+          // Redirect to login if not authenticated
+          navigate('/admin-login');
+        }
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        navigate('/admin-login');
+      }
+    };
+
+    checkAuth();
+    
+    // Dados simulados para métricas
+    setMetrics({
+      totalSales: 12850,
+      totalVisits: 2467,
+      cartAbandonment: 68,
+      conversionRate: 3.2,
+      pageViews: {
+        home: 1235,
+        products: 876,
+        cart: 342,
+        checkout: 156,
+      },
+    });
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminAuthenticated');
+    localStorage.removeItem('adminEmail');
+    navigate('/admin-login');
+  };
+
+  const updateAdminEmail = () => {
+    if (!newEmail || !newEmail.includes('@')) {
+      toast({
+        title: "Email inválido",
+        description: "Por favor, insira um email válido.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAdminEmail(newEmail);
+    localStorage.setItem('adminEmail', newEmail);
+    
+    toast({
+      title: "Email atualizado",
+      description: "O email de administrador foi atualizado com sucesso.",
+    });
+    
+    setNewEmail("");
+  };
+>>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
 
   const handleAddFeature = () => {
     if (featureInput.trim()) {
@@ -207,7 +287,7 @@ const Admin = () => {
   }
 
   if (!isAuthenticated) {
-    navigate("/");
+    navigate('/admin-login');
     return null;
   }
 
@@ -217,6 +297,7 @@ const Admin = () => {
 
       <main className="flex-grow pt-24 pb-16">
         <div className="container mx-auto px-4">
+<<<<<<< HEAD
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-8">
             Painel Administrativo
           </h1>
@@ -247,6 +328,31 @@ const Admin = () => {
               >
                 Métricas
               </TabsTrigger>
+=======
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-white">Painel Administrativo</h1>
+            <div className="flex items-center space-x-4">
+              <span className="text-white text-sm hidden md:inline-block">
+                Logado como: {adminEmail}
+              </span>
+              <Button 
+                variant="ghost" 
+                onClick={handleLogout}
+                className="text-white hover:bg-red-500/20 border border-red-500/30"
+              >
+                Sair
+              </Button>
+            </div>
+          </div>
+          
+          <Tabs defaultValue="products" className="space-y-6">
+            <TabsList className={`grid ${isMobile ? 'grid-cols-2 gap-2 mb-2' : 'grid-cols-5 gap-2'}`}>
+              <TabsTrigger value="products" className="data-[state=active]:bg-alphablue">Produtos</TabsTrigger>
+              <TabsTrigger value="promotions" className="data-[state=active]:bg-alphablue">Promoções</TabsTrigger>
+              <TabsTrigger value="payments" className="data-[state=active]:bg-alphablue">Pagamentos</TabsTrigger>
+              <TabsTrigger value="metrics" className="data-[state=active]:bg-alphablue">Métricas</TabsTrigger>
+              <TabsTrigger value="settings" className="data-[state=active]:bg-alphablue">Configurações</TabsTrigger>
+>>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
             </TabsList>
 
             {/* Aba de Produtos */}
@@ -538,7 +644,7 @@ const Admin = () => {
                                 )}
                               </div>
                               <p className="text-gray-400 text-sm truncate mt-1">
-                                {product.description.substring(0, 60)}...
+                                {product.description?.substring(0, 60)}...
                               </p>
                             </div>
 
@@ -651,10 +757,15 @@ const Admin = () => {
 
                       <div className="flex justify-between p-4 bg-alphadark rounded-lg border border-gray-700">
                         <div>
+<<<<<<< HEAD
                           <h3 className="text-white font-medium">VERAO2023</h3>
                           <p className="text-gray-400 text-sm">
                             15% de desconto em acessórios
                           </p>
+=======
+                          <h3 className="text-white font-medium">ZAPP15</h3>
+                          <p className="text-gray-400 text-sm">15% de desconto em compras pelo WhatsApp</p>
+>>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-green-400 text-sm">Ativo</span>
@@ -713,15 +824,20 @@ const Admin = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-1 bg-alphadarkblue border-gray-700">
                   <CardHeader>
+<<<<<<< HEAD
                     <CardTitle className="text-white">
                       Integrações de Pagamento
                     </CardTitle>
+=======
+                    <CardTitle className="text-white">Configuração de Pagamentos</CardTitle>
+>>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
                     <CardDescription>
                       Configure os métodos de pagamento
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
+<<<<<<< HEAD
                       <Label htmlFor="paymentApiKey">
                         Chave API de Pagamento
                       </Label>
@@ -734,6 +850,42 @@ const Admin = () => {
                       <p className="text-xs text-gray-400">
                         API configurada em 29/04/2025
                       </p>
+=======
+                      <Label>API Keys de Pagamento</Label>
+                      <div className="bg-alphadark p-4 rounded-lg space-y-3">
+                        <div>
+                          <Label htmlFor="publicKey" className="text-xs text-gray-400">Chave Pública</Label>
+                          <Input 
+                            id="publicKey"
+                            value="pk_cxB1fS-bnOsQr8c2NIiwN61astAjC4IBJJ4bBEvrQH0nDL5G"
+                            className="font-mono text-xs"
+                            readOnly
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="privateKey" className="text-xs text-gray-400">Chave Privada</Label>
+                          <Input 
+                            id="privateKey"
+                            type="password" 
+                            value="●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●"
+                            className="font-mono text-xs"
+                            readOnly
+                          />
+                          <p className="text-xs text-gray-400 mt-1">Configuradas em 29/04/2025</p>
+                        </div>
+                        
+                        <div className="pt-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full border-alphablue text-alphablue"
+                          >
+                            Atualizar chaves
+                          </Button>
+                        </div>
+                      </div>
+>>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
                     </div>
 
                     <div className="space-y-2 pt-4">
@@ -775,7 +927,7 @@ const Admin = () => {
                     </div>
 
                     <Button className="bg-alphablue hover:bg-alphablue/80 w-full mt-4">
-                      Testar Conexão
+                      Testar Conexão com API
                     </Button>
                   </CardContent>
                 </Card>
@@ -849,12 +1001,24 @@ const Admin = () => {
                           </p>
                         </div>
                         <div className="flex flex-col items-end">
+<<<<<<< HEAD
                           <span className="text-white font-medium">
                             R$ 499,00
                           </span>
                           <span className="text-yellow-400 text-sm">
                             Pendente
                           </span>
+=======
+                          <span className="text-white font-medium">R$ 499,00</span>
+                          <span className="text-yellow-400 text-sm">Pendente</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs mt-1 h-6 px-2"
+                          >
+                            Verificar
+                          </Button>
+>>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
                         </div>
                       </div>
 
@@ -1246,6 +1410,142 @@ const Admin = () => {
                         carrinho antes de finalizar a compra
                       </p>
                     </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+            
+            {/* Aba de Configurações */}
+            <TabsContent value="settings">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="bg-alphadarkblue border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white">Configurações de Email</CardTitle>
+                    <CardDescription>
+                      Configure os emails administrativos e notificações
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="adminEmail">Email do Administrador</Label>
+                      <div className="flex items-center">
+                        <div className="flex-grow flex items-center space-x-2 bg-alphadark rounded px-3 py-2">
+                          <Mail className="h-4 w-4 text-gray-400" />
+                          <span className="text-white">{adminEmail}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="newEmail">Alterar Email do Administrador</Label>
+                      <div className="flex space-x-2">
+                        <Input 
+                          id="newEmail"
+                          type="email"
+                          value={newEmail}
+                          onChange={(e) => setNewEmail(e.target.value)}
+                          placeholder="novo@email.com"
+                        />
+                        <Button 
+                          onClick={updateAdminEmail} 
+                          className="bg-alphablue hover:bg-alphablue/80 whitespace-nowrap"
+                        >
+                          Atualizar
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 pt-4">
+                      <Label>Notificações por Email</Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between py-2 border-b border-gray-700">
+                          <div className="flex items-center space-x-2">
+                            <input type="checkbox" id="email_orders" checked />
+                            <label htmlFor="email_orders" className="text-white">Novos pedidos</label>
+                          </div>
+                          <Button variant="ghost" size="sm">
+                            Configurar
+                          </Button>
+                        </div>
+                        
+                        <div className="flex items-center justify-between py-2 border-b border-gray-700">
+                          <div className="flex items-center space-x-2">
+                            <input type="checkbox" id="email_abandoned" checked />
+                            <label htmlFor="email_abandoned" className="text-white">Carrinhos abandonados</label>
+                          </div>
+                          <Button variant="ghost" size="sm">
+                            Configurar
+                          </Button>
+                        </div>
+                        
+                        <div className="flex items-center justify-between py-2 border-b border-gray-700">
+                          <div className="flex items-center space-x-2">
+                            <input type="checkbox" id="email_payments" checked />
+                            <label htmlFor="email_payments" className="text-white">Confirmações de pagamento</label>
+                          </div>
+                          <Button variant="ghost" size="sm">
+                            Configurar
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 flex items-start">
+                      <AlertTriangle className="text-yellow-500 h-5 w-5 mt-0.5 mr-2 flex-shrink-0" />
+                      <div>
+                        <h4 className="text-yellow-500 font-medium">Envio de emails</h4>
+                        <p className="text-yellow-500/80 text-sm">
+                          Os emails são simulados em ambiente de desenvolvimento. Configure um serviço de email como Sendgrid ou Resend para envio real em produção.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-alphadarkblue border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white">Informações de Contato</CardTitle>
+                    <CardDescription>
+                      Configure as informações de contato exibidas no site
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="contactPhone">Telefone de Contato</Label>
+                      <Input 
+                        id="contactPhone"
+                        value="13 99611-4479"
+                        className="font-medium"
+                      />
+                      <p className="text-xs text-gray-400">Este número será exibido no site e usado para o botão de WhatsApp</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="contactEmail">Email de Contato</Label>
+                      <Input 
+                        id="contactEmail"
+                        type="email"
+                        value="loja.alphatechbr@gmail.com"
+                        className="font-medium"
+                      />
+                      <p className="text-xs text-gray-400">Email exibido para clientes entrarem em contato</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="whatsappMessage">Mensagem padrão do WhatsApp</Label>
+                      <Textarea 
+                        id="whatsappMessage"
+                        value="Olá! Gostaria de saber mais sobre os produtos da Alpha Tech BR."
+                        rows={3}
+                      />
+                      <p className="text-xs text-gray-400">Mensagem pré-configurada ao clicar no botão de WhatsApp</p>
+                    </div>
+                    
+                    <Button 
+                      className="w-full mt-4 bg-alphablue hover:bg-alphablue/80"
+                    >
+                      Salvar Alterações
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
