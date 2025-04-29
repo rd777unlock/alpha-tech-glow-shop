@@ -48,6 +48,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
               src={product.imageUrl} 
               alt={product.name} 
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "https://placehold.co/300x300/alphadark/gray?text=Imagem+Indisponível";
+              }}
             />
           </div>
           
@@ -72,6 +76,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
                 src="/loggi-logo.png" 
                 alt="Loggi" 
                 className="w-3 h-3 mr-1" 
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "https://placehold.co/12x12/alphadark/gray?text=L";
+                }}
               />
               Entrega rápida
             </div>

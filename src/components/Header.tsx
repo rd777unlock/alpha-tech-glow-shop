@@ -1,9 +1,16 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ShoppingCart } from 'lucide-react';
+import { useCart } from '../context/CartContext';
+
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  return <header className="fixed top-0 left-0 right-0 bg-alphadark/80 backdrop-blur-md z-50 border-b border-white/10">
+  const { getItemCount } = useCart();
+  const cartItemCount = getItemCount();
+
+  return (
+    <header className="fixed top-0 left-0 right-0 bg-alphadark/80 backdrop-blur-md z-50 border-b border-white/10">
       <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
           <img alt="Alpha Tech BR Logo" className="h-10 md:h-12" src="/lovable-uploads/582ef411-fc1d-4a9d-ac78-fab3f9f31069.png" />
@@ -21,8 +28,13 @@ const Header = () => {
           <button className="text-white p-2 rounded-full hover:bg-white/10 transition-colors">
             <Search size={20} />
           </button>
-          <Link to="/cart" className="text-white p-2 rounded-full hover:bg-white/10 transition-colors">
+          <Link to="/cart" className="text-white p-2 rounded-full hover:bg-white/10 transition-colors relative">
             <ShoppingCart size={20} />
+            {cartItemCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-alphagreen text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {cartItemCount > 99 ? '99+' : cartItemCount}
+              </span>
+            )}
           </Link>
           
           {/* Mobile menu button */}
@@ -35,15 +47,20 @@ const Header = () => {
       </div>
       
       {/* Mobile menu */}
-      {isMenuOpen && <div className="md:hidden bg-alphadarkblue/95 backdrop-blur-md animate-fade-in">
+      {isMenuOpen && (
+        <div className="md:hidden bg-alphadarkblue/95 backdrop-blur-md animate-fade-in">
           <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
             <Link to="/" className="text-white py-2 hover:text-gradient font-medium">Home</Link>
             <Link to="/iphones" className="text-white py-2 hover:text-gradient font-medium">iPhones</Link>
             <Link to="/acessorios" className="text-white py-2 hover:text-gradient font-medium">Acessórios</Link>
             <Link to="/about" className="text-white py-2 hover:text-gradient font-medium">Sobre</Link>
             <Link to="/support" className="text-white py-2 hover:text-gradient font-medium">Suporte</Link>
+            <Link to="/admin" className="text-white py-2 hover:text-gradient font-medium">Admin</Link>
           </div>
-        </div>}
-    </header>;
+        </div>
+      )}
+    </header>
+  );
 };
+
 export default Header;

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -13,7 +13,8 @@ import { Separator } from "@/components/ui/separator";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "../hooks/use-toast";
-import { Loader2, LockIcon, CreditCard, CheckIcon, AlertTriangle } from "lucide-react";
+import { Loader2, LockIcon, CreditCard, CheckIcon, AlertTriangle, ArrowLeft, ArrowRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 // Create a schema for the form validation
 const formSchema = z.object({
@@ -33,10 +34,18 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
+enum CheckoutStep {
+  PersonalData = 0,
+  Payment = 1,
+  Confirmation = 2
+}
+
 const Checkout = () => {
   const { cartItems, getCartTotal, clearCart } = useCart();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState<CheckoutStep>(CheckoutStep.PersonalData);
+  const [orderNumber, setOrderNumber] = useState<string>(`ALF${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`);
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -56,8 +65,14 @@ const Checkout = () => {
     },
   });
   
-  const { watch } = form;
+  const { watch, trigger, getValues } = form;
   const paymentMethod = watch("paymentMethod");
+  
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      navigate("/cart");
+    }
+  }, [cartItems, navigate]);
   
   const formatPrice = (price: number) => {
     return price.toLocaleString('pt-BR', {
@@ -66,15 +81,74 @@ const Checkout = () => {
     });
   };
   
+  const handleNextStep = async () => {
+    if (currentStep === CheckoutStep.PersonalData) {
+      // Validate personal data form fields
+      const isValid = await trigger([
+        "name", "email", "phone", "address", "city", "state", "zipCode"
+      ]);
+      
+      if (isValid) {
+        setCurrentStep(CheckoutStep.Payment);
+        window.scrollTo(0, 0);
+      }
+    } else if (currentStep === CheckoutStep.Payment) {
+      // Validate payment related fields
+      let isValid = await trigger(["paymentMethod"]);
+      
+      if (paymentMethod === "credit") {
+        isValid = isValid && await trigger([
+          "cardNumber", "cardName", "cardExpiry", "cardCvv"
+        ]);
+      }
+      
+      if (isValid) {
+        setCurrentStep(CheckoutStep.Confirmation);
+        window.scrollTo(0, 0);
+      }
+    }
+  };
+  
+  const handlePreviousStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+      window.scrollTo(0, 0);
+    }
+  };
+  
   // Simulate payment processing
   const processPayment = async (data: FormData) => {
     setIsSubmitting(true);
     
-    // In a real application, you would call your payment API here
-    // For this demo, we'll simulate a successful payment after a short delay
     try {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Attempt to send confirmation email
+      try {
+        const { error } = await supabase.functions.invoke('send-confirmation-email', {
+          body: {
+            email: data.email,
+            name: data.name,
+            orderNumber: orderNumber,
+            totalAmount: getCartTotal(),
+            paymentMethod: data.paymentMethod,
+            items: cartItems.map(item => ({
+              name: item.product.name,
+              quantity: item.quantity,
+              price: item.product.discount 
+                ? Math.round(item.product.price * (1 - item.product.discount / 100))
+                : item.product.price
+            }))
+          }
+        });
+        
+        if (error) {
+          console.error("Error sending confirmation email:", error);
+        }
+      } catch (emailError) {
+        console.error("Failed to send confirmation email:", emailError);
+      }
       
       // For demo purposes, pretend the payment was processed successfully
       toast({
@@ -93,6 +167,7 @@ const Checkout = () => {
         description: "Por favor, tente novamente ou use outro método de pagamento.",
         variant: "destructive",
       });
+      setCurrentStep(CheckoutStep.Payment);
     } finally {
       setIsSubmitting(false);
     }
@@ -129,181 +204,198 @@ const Checkout = () => {
               <span className="text-white">Checkout seguro - Seus dados estão protegidos</span>
             </div>
             
+            {/* Checkout Progress */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col items-center">
+                  <div className={`rounded-full h-10 w-10 flex items-center justify-center ${currentStep >= CheckoutStep.PersonalData ? 'bg-alphablue text-white' : 'bg-gray-600 text-gray-300'}`}>
+                    1
+                  </div>
+                  <span className="text-sm text-white mt-2">Dados</span>
+                </div>
+                
+                <div className={`h-1 flex-grow mx-2 ${currentStep >= CheckoutStep.Payment ? 'bg-alphablue' : 'bg-gray-600'}`}></div>
+                
+                <div className="flex flex-col items-center">
+                  <div className={`rounded-full h-10 w-10 flex items-center justify-center ${currentStep >= CheckoutStep.Payment ? 'bg-alphablue text-white' : 'bg-gray-600 text-gray-300'}`}>
+                    2
+                  </div>
+                  <span className="text-sm text-white mt-2">Pagamento</span>
+                </div>
+                
+                <div className={`h-1 flex-grow mx-2 ${currentStep >= CheckoutStep.Confirmation ? 'bg-alphablue' : 'bg-gray-600'}`}></div>
+                
+                <div className="flex flex-col items-center">
+                  <div className={`rounded-full h-10 w-10 flex items-center justify-center ${currentStep >= CheckoutStep.Confirmation ? 'bg-alphablue text-white' : 'bg-gray-600 text-gray-300'}`}>
+                    3
+                  </div>
+                  <span className="text-sm text-white mt-2">Confirmação</span>
+                </div>
+              </div>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-2">
                 <div className="bg-alphadarkblue rounded-xl p-6 mb-6">
-                  <h2 className="text-xl text-white font-medium mb-6">Informações de Entrega</h2>
-                  
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Nome Completo</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Seu nome completo" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
-                                <Input type="email" placeholder="seu@email.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Telefone</FormLabel>
-                            <FormControl>
-                              <Input placeholder="(11) 99999-9999" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="address"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Endereço</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Rua, número, complemento" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <div className="col-span-2">
+                      {/* Step 1: Personal Data */}
+                      {currentStep === CheckoutStep.PersonalData && (
+                        <>
+                          <h2 className="text-xl text-white font-medium mb-6">Informações de Entrega</h2>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField
+                              control={form.control}
+                              name="name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Nome Completo</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Seu nome completo" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="email"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Email</FormLabel>
+                                  <FormControl>
+                                    <Input type="email" placeholder="seu@email.com" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
                           <FormField
                             control={form.control}
-                            name="city"
+                            name="phone"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Cidade</FormLabel>
+                                <FormLabel>Telefone</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="Sua cidade" {...field} />
+                                  <Input placeholder="(11) 99999-9999" {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                        </div>
-                        
-                        <FormField
-                          control={form.control}
-                          name="state"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Estado</FormLabel>
-                              <FormControl>
-                                <Input placeholder="UF" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="zipCode"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>CEP</FormLabel>
-                              <FormControl>
-                                <Input placeholder="00000-000" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                          
+                          <FormField
+                            control={form.control}
+                            name="address"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Endereço</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Rua, número, complemento" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <div className="col-span-2">
+                              <FormField
+                                control={form.control}
+                                name="city"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Cidade</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="Sua cidade" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            
+                            <FormField
+                              control={form.control}
+                              name="state"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Estado</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="UF" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="zipCode"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>CEP</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="00000-000" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+                          <div className="pt-6 flex justify-end">
+                            <Button
+                              type="button"
+                              className="bg-gradient-tech text-white font-medium py-3 px-6 rounded-lg h-auto hover:opacity-90 transition-opacity flex items-center"
+                              onClick={handleNextStep}
+                            >
+                              Próximo: Pagamento
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                          </div>
+                        </>
+                      )}
                       
-                      <Separator className="bg-gray-700 my-6" />
-                      
-                      <div>
-                        <h2 className="text-xl text-white font-medium mb-6">Método de Pagamento</h2>
-                        
-                        <FormField
-                          control={form.control}
-                          name="paymentMethod"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <RadioGroup
-                                  className="flex flex-col space-y-4"
-                                  value={field.value}
-                                  onValueChange={field.onChange}
-                                >
-                                  <div className={`border ${field.value === 'credit' ? 'border-alphablue' : 'border-gray-600'} rounded-lg p-4 transition-colors`}>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="credit" id="credit" />
-                                      <FormLabel htmlFor="credit" className="flex items-center gap-2 cursor-pointer">
-                                        <CreditCard className="h-5 w-5" />
-                                        <span>Cartão de Crédito</span>
-                                      </FormLabel>
-                                    </div>
-                                    
-                                    {field.value === 'credit' && (
-                                      <div className="mt-4 space-y-4">
-                                        <FormField
-                                          control={form.control}
-                                          name="cardNumber"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Número do Cartão</FormLabel>
-                                              <FormControl>
-                                                <Input placeholder="0000 0000 0000 0000" {...field} />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                        
-                                        <FormField
-                                          control={form.control}
-                                          name="cardName"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Nome no Cartão</FormLabel>
-                                              <FormControl>
-                                                <Input placeholder="Como está no cartão" {...field} />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                        
-                                        <div className="grid grid-cols-2 gap-4">
+                      {/* Step 2: Payment */}
+                      {currentStep === CheckoutStep.Payment && (
+                        <>
+                          <h2 className="text-xl text-white font-medium mb-6">Método de Pagamento</h2>
+                          
+                          <FormField
+                            control={form.control}
+                            name="paymentMethod"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <RadioGroup
+                                    className="flex flex-col space-y-4"
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                  >
+                                    <div className={`border ${field.value === 'credit' ? 'border-alphablue' : 'border-gray-600'} rounded-lg p-4 transition-colors`}>
+                                      <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="credit" id="credit" />
+                                        <FormLabel htmlFor="credit" className="flex items-center gap-2 cursor-pointer">
+                                          <CreditCard className="h-5 w-5" />
+                                          <span>Cartão de Crédito</span>
+                                        </FormLabel>
+                                      </div>
+                                      
+                                      {field.value === 'credit' && (
+                                        <div className="mt-4 space-y-4">
                                           <FormField
                                             control={form.control}
-                                            name="cardExpiry"
+                                            name="cardNumber"
                                             render={({ field }) => (
                                               <FormItem>
-                                                <FormLabel>Validade</FormLabel>
+                                                <FormLabel>Número do Cartão</FormLabel>
                                                 <FormControl>
-                                                  <Input placeholder="MM/AA" {...field} />
+                                                  <Input placeholder="0000 0000 0000 0000" {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                               </FormItem>
@@ -312,89 +404,294 @@ const Checkout = () => {
                                           
                                           <FormField
                                             control={form.control}
-                                            name="cardCvv"
+                                            name="cardName"
                                             render={({ field }) => (
                                               <FormItem>
-                                                <FormLabel>CVV</FormLabel>
+                                                <FormLabel>Nome no Cartão</FormLabel>
                                                 <FormControl>
-                                                  <Input placeholder="123" {...field} />
+                                                  <Input placeholder="Como está no cartão" {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                               </FormItem>
                                             )}
                                           />
+                                          
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <FormField
+                                              control={form.control}
+                                              name="cardExpiry"
+                                              render={({ field }) => (
+                                                <FormItem>
+                                                  <FormLabel>Validade</FormLabel>
+                                                  <FormControl>
+                                                    <Input placeholder="MM/AA" {...field} />
+                                                  </FormControl>
+                                                  <FormMessage />
+                                                </FormItem>
+                                              )}
+                                            />
+                                            
+                                            <FormField
+                                              control={form.control}
+                                              name="cardCvv"
+                                              render={({ field }) => (
+                                                <FormItem>
+                                                  <FormLabel>CVV</FormLabel>
+                                                  <FormControl>
+                                                    <Input placeholder="123" {...field} />
+                                                  </FormControl>
+                                                  <FormMessage />
+                                                </FormItem>
+                                              )}
+                                            />
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                    
+                                    <div className={`border ${field.value === 'pix' ? 'border-alphablue' : 'border-gray-600'} rounded-lg p-4 transition-colors`}>
+                                      <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="pix" id="pix" />
+                                        <FormLabel htmlFor="pix" className="flex items-center gap-2 cursor-pointer">
+                                          <img 
+                                            src="https://logospng.org/download/pix/logo-pix-512.png" 
+                                            alt="Pix" 
+                                            className="h-5 w-5" 
+                                            onError={(e) => {
+                                              const target = e.target as HTMLImageElement;
+                                              target.src = "https://placehold.co/20x20/alphadark/gray?text=PIX";
+                                            }}
+                                          />
+                                          <span>Pix</span>
+                                        </FormLabel>
+                                      </div>
+                                      
+                                      {field.value === 'pix' && (
+                                        <div className="mt-4 p-4 bg-gray-800 rounded-lg text-center">
+                                          <p className="text-gray-300 mb-2">Finalize a compra para gerar o código Pix</p>
+                                          <AlertTriangle className="h-16 w-16 mx-auto text-yellow-500 mb-2" />
+                                          <p className="text-gray-300 text-sm">O código Pix será gerado na próxima etapa</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                    
+                                    <div className={`border ${field.value === 'boleto' ? 'border-alphablue' : 'border-gray-600'} rounded-lg p-4 transition-colors`}>
+                                      <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="boleto" id="boleto" />
+                                        <FormLabel htmlFor="boleto" className="flex items-center gap-2 cursor-pointer">
+                                          <img 
+                                            src="https://logospng.org/download/boleto-bancario/logo-boleto-bancario-256.png" 
+                                            alt="Boleto" 
+                                            className="h-5 w-5" 
+                                            onError={(e) => {
+                                              const target = e.target as HTMLImageElement;
+                                              target.src = "https://placehold.co/20x20/alphadark/gray?text=BOLETO";
+                                            }}
+                                          />
+                                          <span>Boleto Bancário</span>
+                                        </FormLabel>
+                                      </div>
+                                      
+                                      {field.value === 'boleto' && (
+                                        <div className="mt-4 p-4 bg-gray-800 rounded-lg">
+                                          <p className="text-gray-300 mb-2">Informações importantes:</p>
+                                          <ul className="text-gray-300 text-sm list-disc list-inside space-y-1">
+                                            <li>O boleto será gerado na próxima etapa</li>
+                                            <li>Prazo de até 3 dias úteis para compensação</li>
+                                            <li>Produtos liberados após confirmação do pagamento</li>
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <div className="pt-6 flex justify-between">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handlePreviousStep}
+                              className="py-3 px-6 rounded-lg h-auto flex items-center"
+                            >
+                              <ArrowLeft className="mr-2 h-4 w-4" />
+                              Voltar: Dados
+                            </Button>
+                            
+                            <Button
+                              type="button"
+                              className="bg-gradient-tech text-white font-medium py-3 px-6 rounded-lg h-auto hover:opacity-90 transition-opacity flex items-center"
+                              onClick={handleNextStep}
+                            >
+                              Próximo: Confirmar
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                      
+                      {/* Step 3: Confirmation */}
+                      {currentStep === CheckoutStep.Confirmation && (
+                        <>
+                          <h2 className="text-xl text-white font-medium mb-6">Confirmação do Pedido</h2>
+                          
+                          <div className="space-y-6">
+                            <div className="bg-alphadark rounded-lg p-4">
+                              <h3 className="text-white font-medium mb-3">Dados de Entrega</h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <p className="text-gray-400">Nome:</p>
+                                  <p className="text-white">{getValues("name")}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-400">Email:</p>
+                                  <p className="text-white">{getValues("email")}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-400">Telefone:</p>
+                                  <p className="text-white">{getValues("phone")}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-400">Endereço:</p>
+                                  <p className="text-white">{getValues("address")}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-400">Cidade/Estado:</p>
+                                  <p className="text-white">{getValues("city")}/{getValues("state")}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-400">CEP:</p>
+                                  <p className="text-white">{getValues("zipCode")}</p>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="bg-alphadark rounded-lg p-4">
+                              <h3 className="text-white font-medium mb-3">Método de Pagamento</h3>
+                              <div className="flex items-center gap-2">
+                                {paymentMethod === "credit" && (
+                                  <>
+                                    <CreditCard className="text-alphablue h-5 w-5" />
+                                    <p className="text-white">
+                                      Cartão de Crédito terminando em {getValues("cardNumber")?.slice(-4) || "****"}
+                                    </p>
+                                  </>
+                                )}
+                                
+                                {paymentMethod === "pix" && (
+                                  <>
+                                    <img 
+                                      src="https://logospng.org/download/pix/logo-pix-512.png" 
+                                      alt="Pix" 
+                                      className="h-5 w-5" 
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = "https://placehold.co/20x20/alphadark/gray?text=PIX";
+                                      }}
+                                    />
+                                    <p className="text-white">Pagamento via Pix</p>
+                                  </>
+                                )}
+                                
+                                {paymentMethod === "boleto" && (
+                                  <>
+                                    <img 
+                                      src="https://logospng.org/download/boleto-bancario/logo-boleto-bancario-256.png" 
+                                      alt="Boleto" 
+                                      className="h-5 w-5" 
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = "https://placehold.co/20x20/alphadark/gray?text=BOLETO";
+                                      }}
+                                    />
+                                    <p className="text-white">Pagamento via Boleto Bancário</p>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="bg-alphadark rounded-lg p-4">
+                              <h3 className="text-white font-medium mb-3">Itens do Pedido</h3>
+                              <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2">
+                                {cartItems.map((item) => {
+                                  const discountedPrice = item.product.discount 
+                                    ? Math.round(item.product.price * (1 - item.product.discount / 100)) 
+                                    : item.product.price;
+                                    
+                                  return (
+                                    <div key={item.product.id} className="flex gap-3 pb-3 border-b border-gray-700">
+                                      <div className="w-12 h-12">
+                                        <img 
+                                          src={item.product.imageUrl} 
+                                          alt={item.product.name} 
+                                          className="w-full h-full object-cover rounded-md"
+                                          onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.src = "https://placehold.co/48x48/alphadark/gray?text=Imagem+Indisponível";
+                                          }}
+                                        />
+                                      </div>
+                                      
+                                      <div className="flex-grow">
+                                        <h4 className="text-white text-sm">{item.product.name}</h4>
+                                        <div className="flex justify-between items-center mt-1">
+                                          <span className="text-gray-400 text-xs">Qtd: {item.quantity}</span>
+                                          <span className="text-white text-sm">{formatPrice(discountedPrice * item.quantity)}</span>
                                         </div>
                                       </div>
-                                    )}
-                                  </div>
-                                  
-                                  <div className={`border ${field.value === 'pix' ? 'border-alphablue' : 'border-gray-600'} rounded-lg p-4 transition-colors`}>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="pix" id="pix" />
-                                      <FormLabel htmlFor="pix" className="flex items-center gap-2 cursor-pointer">
-                                        <img src="https://logospng.org/download/pix/logo-pix-512.png" alt="Pix" className="h-5 w-5" />
-                                        <span>Pix</span>
-                                      </FormLabel>
                                     </div>
-                                    
-                                    {field.value === 'pix' && (
-                                      <div className="mt-4 p-4 bg-gray-800 rounded-lg text-center">
-                                        <p className="text-gray-300 mb-2">Finalize a compra para gerar o código Pix</p>
-                                        <AlertTriangle className="h-16 w-16 mx-auto text-yellow-500 mb-2" />
-                                        <p className="text-gray-300 text-sm">O código Pix será gerado na próxima etapa</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                  
-                                  <div className={`border ${field.value === 'boleto' ? 'border-alphablue' : 'border-gray-600'} rounded-lg p-4 transition-colors`}>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="boleto" id="boleto" />
-                                      <FormLabel htmlFor="boleto" className="flex items-center gap-2 cursor-pointer">
-                                        <img src="https://logospng.org/download/boleto-bancario/logo-boleto-bancario-256.png" alt="Boleto" className="h-5 w-5" />
-                                        <span>Boleto Bancário</span>
-                                      </FormLabel>
-                                    </div>
-                                    
-                                    {field.value === 'boleto' && (
-                                      <div className="mt-4 p-4 bg-gray-800 rounded-lg">
-                                        <p className="text-gray-300 mb-2">Informações importantes:</p>
-                                        <ul className="text-gray-300 text-sm list-disc list-inside space-y-1">
-                                          <li>O boleto será gerado na próxima etapa</li>
-                                          <li>Prazo de até 3 dias úteis para compensação</li>
-                                          <li>Produtos liberados após confirmação do pagamento</li>
-                                        </ul>
-                                      </div>
-                                    )}
-                                  </div>
-                                </RadioGroup>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <div className="pt-6">
-                        <Button
-                          type="submit"
-                          className="w-full bg-gradient-tech text-white font-medium py-6 rounded-lg h-auto hover:opacity-90 transition-opacity"
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                              Processando pagamento...
-                            </>
-                          ) : (
-                            `Finalizar Pedido (${formatPrice(getCartTotal())})`
-                          )}
-                        </Button>
-                        
-                        <p className="text-gray-400 text-sm text-center mt-4 flex items-center justify-center">
-                          <LockIcon className="h-4 w-4 mr-1" />
-                          Pagamento seguro processado com criptografia
-                        </p>
-                      </div>
+                                  );
+                                })}
+                              </div>
+                              
+                              <div className="mt-4 pt-3 border-t border-gray-700">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-300">Subtotal:</span>
+                                  <span className="text-white">{formatPrice(getCartTotal())}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-300">Frete:</span>
+                                  <span className="text-alphablue">Grátis</span>
+                                </div>
+                                <div className="flex justify-between font-bold mt-2">
+                                  <span className="text-white">Total:</span>
+                                  <span className="text-white">{formatPrice(getCartTotal())}</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="pt-6 flex justify-between">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handlePreviousStep}
+                                className="py-3 px-6 rounded-lg h-auto flex items-center"
+                              >
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Voltar: Pagamento
+                              </Button>
+                              
+                              <Button
+                                type="submit"
+                                className="bg-gradient-tech text-white font-medium py-6 rounded-lg h-auto hover:opacity-90 transition-opacity"
+                                disabled={isSubmitting}
+                              >
+                                {isSubmitting ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                    Processando pagamento...
+                                  </>
+                                ) : (
+                                  `Finalizar Pedido (${formatPrice(getCartTotal())})`
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </form>
                   </Form>
                 </div>
@@ -420,6 +717,10 @@ const Checkout = () => {
                               src={item.product.imageUrl} 
                               alt={item.product.name} 
                               className="w-full h-full object-cover rounded-md"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "https://placehold.co/64x64/alphadark/gray?text=Imagem+Indisponível";
+                              }}
                             />
                           </div>
                           

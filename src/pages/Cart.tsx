@@ -77,6 +77,10 @@ const Cart = () => {
                                 src={item.product.imageUrl} 
                                 alt={item.product.name} 
                                 className="w-full h-full object-cover rounded-lg"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = "https://placehold.co/96x96/alphadark/gray?text=Imagem+Indisponível";
+                                }}
                               />
                             </Link>
                           </div>
@@ -181,19 +185,59 @@ const Cart = () => {
                     <h3 className="text-white font-medium mb-3">Métodos de Pagamento</h3>
                     <div className="grid grid-cols-5 gap-2">
                       <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
-                        <img src="https://logospng.org/download/visa/logo-visa-2048.png" alt="Visa" className="h-6" />
+                        <img 
+                          src="https://logospng.org/download/visa/logo-visa-2048.png" 
+                          alt="Visa" 
+                          className="h-6"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "https://placehold.co/24x24/alphadark/gray?text=VISA";
+                          }}
+                        />
                       </div>
                       <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
-                        <img src="https://logospng.org/download/mastercard/logo-mastercard-2048.png" alt="Mastercard" className="h-6" />
+                        <img 
+                          src="https://logospng.org/download/mastercard/logo-mastercard-2048.png" 
+                          alt="Mastercard" 
+                          className="h-6"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "https://placehold.co/24x24/alphadark/gray?text=MC";
+                          }}
+                        />
                       </div>
                       <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
-                        <img src="https://logospng.org/download/pix/logo-pix-512.png" alt="Pix" className="h-6" />
+                        <img 
+                          src="https://logospng.org/download/pix/logo-pix-512.png" 
+                          alt="Pix" 
+                          className="h-6"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "https://placehold.co/24x24/alphadark/gray?text=PIX";
+                          }}
+                        />
                       </div>
                       <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
-                        <img src="https://logospng.org/download/boleto-bancario/logo-boleto-bancario-256.png" alt="Boleto" className="h-6" />
+                        <img 
+                          src="https://logospng.org/download/boleto-bancario/logo-boleto-bancario-256.png" 
+                          alt="Boleto" 
+                          className="h-6"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "https://placehold.co/24x24/alphadark/gray?text=BOLETO";
+                          }}
+                        />
                       </div>
                       <div className="bg-white/10 p-2 rounded-md flex items-center justify-center">
-                        <img src="https://logodownload.org/wp-content/uploads/2020/02/american-express-logo-0-1536x1536.png" alt="American Express" className="h-6" />
+                        <img 
+                          src="https://logodownload.org/wp-content/uploads/2020/02/american-express-logo-0-1536x1536.png" 
+                          alt="American Express" 
+                          className="h-6"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "https://placehold.co/24x24/alphadark/gray?text=AMEX";
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
