@@ -1,0 +1,31 @@
+Etapas do Refactor e Migração Backend - Admin
+
+[✔] 1. Análise inicial do código e levantamento dos pontos de integração backend
+[✔] 2. Remoção de todas as integrações e chamadas ao Supabase/backend
+[✔] 3. Substituição de dados dinâmicos por mocks locais
+[✔] 4. Centralização da lógica de manipulação de dados em helpers/services (adminService)
+[✔] 5. Documentação dos pontos de integração futura com backend remoto
+[✔] 6. Refatoração do Admin.tsx para consumir adminService e garantir clean code
+[✔] 7. Revisão final do código para garantir ausência de vestígios do backend antigo
+[✔] 8. Garantir responsividade e ausência de código duplicado
+[✔] 9. Revisar e seguir as regras básicas do projeto
+[✔] 10. Remover arquivos/pastas do Supabase e dependências antigas
+[✔] 11. Preparar estrutura para nova backend (API REST, GraphQL, etc)
+[✔] 12. Criar helpers/services para integração futura (ex: apiService.ts)
+[✔] 13. Criar funções serverless process-payment e webhook na pasta /api
+[ ] 14. Adaptar Checkout.tsx para consumir a função /api/process-payment
+[ ] 15. Documentar como configurar o webhook no painel do gateway
+[ ] 16. Testar fluxo completo de pagamento e atualização de status
+
+Regras para o projeto:
+- Clean code: código limpo, legível e bem organizado
+- Atenção a códigos repetidos: sempre revisar se já há um arquivo/função com o mesmo código
+- Ser responsivo: garantir que a interface funcione bem em todos os tamanhos de tela
+- Sempre ao terminar o código, revisar novamente
+- Não modificar partes do código sem consultar antes
+
+Próximos passos:
+- [ ] Adaptar Checkout.tsx para consumir a função /api/process-payment
+- [ ] Documentar como configurar o webhook no painel do gateway
+- [ ] Testar fluxo completo de pagamento e atualização de status
+- [ ] Atualizar esta lista conforme avançar
