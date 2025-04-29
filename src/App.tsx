@@ -27,16 +27,13 @@ import Promocoes from "./pages/Promocoes";
 import Checkout from "./pages/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import Admin from "./pages/Admin";
-<<<<<<< HEAD
 import Login from "./pages/Login";
+import AdminLogin from "./pages/AdminLogin";
 
 // Initialize Tempo Devtools
 if (import.meta.env.VITE_TEMPO === "true") {
   TempoDevtools.init();
 }
-=======
-import AdminLogin from "./pages/AdminLogin";
->>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
 
 const queryClient = new QueryClient();
 
@@ -84,6 +81,7 @@ const AppRoutes = () => {
         {/* Alias for /promocoes */}
         <Route path="/login" element={<Login />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
         {/* Allow Tempo routes before the catch-all */}
         {import.meta.env.VITE_TEMPO === "true" && <Route path="/tempobook/*" />}
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
@@ -95,7 +93,6 @@ const AppRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-<<<<<<< HEAD
     <ErrorBoundary>
       <TooltipProvider>
         <CartProvider>
@@ -108,34 +105,6 @@ const App = () => (
         </CartProvider>
       </TooltipProvider>
     </ErrorBoundary>
-=======
-    <TooltipProvider>
-      <CartProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/product/:id" element={<ProductPage />} />
-            <Route path="/iphones" element={<IPhones />} />
-            <Route path="/acessorios" element={<Acessorios />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/checkout/success" element={<CheckoutSuccess />} />
-            <Route path="/produtos" element={<Produtos />} />
-            <Route path="/promocoes" element={<Promocoes />} />
-            <Route path="/promo" element={<Promocoes />} /> {/* Alias for /promocoes */}
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/admin-login" element={<AdminLogin />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </CartProvider>
-    </TooltipProvider>
->>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
   </QueryClientProvider>
 );
 
