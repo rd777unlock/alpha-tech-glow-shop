@@ -28,7 +28,6 @@ import Checkout from "./pages/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
-import AdminLogin from "./pages/AdminLogin";
 
 // Initialize Tempo Devtools
 if (import.meta.env.VITE_TEMPO === "true") {
@@ -81,7 +80,6 @@ const AppRoutes = () => {
         {/* Alias for /promocoes */}
         <Route path="/login" element={<Login />} />
         <Route path="/admin" element={<Admin />} />
-        <Route path="/admin-login" element={<AdminLogin />} />
         {/* Allow Tempo routes before the catch-all */}
         {import.meta.env.VITE_TEMPO === "true" && <Route path="/tempobook/*" />}
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
