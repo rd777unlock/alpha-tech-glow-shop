@@ -27,7 +27,6 @@ import {
   DollarSign,
 } from "lucide-react";
 import products, { Product } from "../data/products";
-import { supabase } from "@/integrations/supabase/client";
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
