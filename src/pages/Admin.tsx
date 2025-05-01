@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-<<<<<<< HEAD
+
 import {
   PlusCircle,
   Edit,
@@ -29,12 +29,12 @@ import {
 } from "lucide-react";
 import products, { Product } from "../data/products";
 import { adminService } from "../lib/adminService";
-=======
+
 import { PlusCircle, Edit, Trash2, BarChart3, Package, ShoppingCart, CreditCard, Users, DollarSign, Mail, AlertTriangle } from "lucide-react";
 import products, { Product } from "../data/products";
 import { useIsMobile } from "../hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
->>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
+d7952de85cc29daa40d5d3636011b14b55a16e7f
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -76,7 +76,6 @@ const Admin = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-<<<<<<< HEAD
   // useEffect para carregar dados iniciais do service
   useEffect(() => {
     setIsLoading(true);
@@ -89,7 +88,7 @@ const Admin = () => {
       setIsLoading(false);
     })();
   }, []);
-=======
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -157,7 +156,7 @@ const Admin = () => {
     
     setNewEmail("");
   };
->>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
+d7952de85cc29daa40d5d3636011b14b55a16e7f
 
   const handleAddFeature = () => {
     if (featureInput.trim()) {
@@ -297,7 +296,7 @@ const Admin = () => {
 
       <main className="flex-grow pt-24 pb-16">
         <div className="container mx-auto px-4">
-<<<<<<< HEAD
+
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-8">
             Painel Administrativo
           </h1>
@@ -328,7 +327,7 @@ const Admin = () => {
               >
                 Métricas
               </TabsTrigger>
-=======
+
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-white">Painel Administrativo</h1>
             <div className="flex items-center space-x-4">
@@ -352,7 +351,7 @@ const Admin = () => {
               <TabsTrigger value="payments" className="data-[state=active]:bg-alphablue">Pagamentos</TabsTrigger>
               <TabsTrigger value="metrics" className="data-[state=active]:bg-alphablue">Métricas</TabsTrigger>
               <TabsTrigger value="settings" className="data-[state=active]:bg-alphablue">Configurações</TabsTrigger>
->>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
+d7952de85cc29daa40d5d3636011b14b55a16e7f
             </TabsList>
 
             {/* Aba de Produtos */}
@@ -757,15 +756,15 @@ const Admin = () => {
 
                       <div className="flex justify-between p-4 bg-alphadark rounded-lg border border-gray-700">
                         <div>
-<<<<<<< HEAD
+
                           <h3 className="text-white font-medium">VERAO2023</h3>
                           <p className="text-gray-400 text-sm">
                             15% de desconto em acessórios
                           </p>
-=======
+
                           <h3 className="text-white font-medium">ZAPP15</h3>
                           <p className="text-gray-400 text-sm">15% de desconto em compras pelo WhatsApp</p>
->>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
+d7952de85cc29daa40d5d3636011b14b55a16e7f
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-green-400 text-sm">Ativo</span>
@@ -824,20 +823,20 @@ const Admin = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-1 bg-alphadarkblue border-gray-700">
                   <CardHeader>
-<<<<<<< HEAD
+
                     <CardTitle className="text-white">
                       Integrações de Pagamento
                     </CardTitle>
-=======
+
                     <CardTitle className="text-white">Configuração de Pagamentos</CardTitle>
->>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
+d7952de85cc29daa40d5d3636011b14b55a16e7f
                     <CardDescription>
                       Configure os métodos de pagamento
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-<<<<<<< HEAD
+
                       <Label htmlFor="paymentApiKey">
                         Chave API de Pagamento
                       </Label>
@@ -850,7 +849,7 @@ const Admin = () => {
                       <p className="text-xs text-gray-400">
                         API configurada em 29/04/2025
                       </p>
-=======
+
                       <Label>API Keys de Pagamento</Label>
                       <div className="bg-alphadark p-4 rounded-lg space-y-3">
                         <div>
@@ -885,7 +884,7 @@ const Admin = () => {
                           </Button>
                         </div>
                       </div>
->>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
+d7952de85cc29daa40d5d3636011b14b55a16e7f
                     </div>
 
                     <div className="space-y-2 pt-4">
@@ -1001,14 +1000,14 @@ const Admin = () => {
                           </p>
                         </div>
                         <div className="flex flex-col items-end">
-<<<<<<< HEAD
+
                           <span className="text-white font-medium">
                             R$ 499,00
                           </span>
                           <span className="text-yellow-400 text-sm">
                             Pendente
                           </span>
-=======
+
                           <span className="text-white font-medium">R$ 499,00</span>
                           <span className="text-yellow-400 text-sm">Pendente</span>
                           <Button
@@ -1018,7 +1017,7 @@ const Admin = () => {
                           >
                             Verificar
                           </Button>
->>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
+d7952de85cc29daa40d5d3636011b14b55a16e7f
                         </div>
                       </div>
 
