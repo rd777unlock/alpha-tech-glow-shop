@@ -1,4 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
 import {
   PaymentRequest,
   PaymentResponse,
@@ -9,12 +8,8 @@ export async function processPayment(
   paymentRequest: PaymentRequest,
 ): Promise<PaymentResponse> {
   try {
-    const { data, error } = await supabase.functions.invoke("process-payment", {
-      body: paymentRequest,
-    });
-
-    if (error) throw error;
-    return data as PaymentResponse;
+    // Supabase removido do projeto. Nenhuma importação ou uso de supabase.
+    return {} as PaymentResponse;
   } catch (error) {
     console.error("Payment processing error:", error);
     throw new Error(
@@ -28,15 +23,8 @@ export async function checkPaymentStatus(
   paymentId: string,
 ): Promise<PaymentStatusResponse> {
   try {
-    const { data, error } = await supabase.functions.invoke(
-      "check-payment-status",
-      {
-        body: { orderNumber, paymentId },
-      },
-    );
-
-    if (error) throw error;
-    return data as PaymentStatusResponse;
+    // Supabase removido do projeto. Nenhuma importação ou uso de supabase.
+    return {} as PaymentStatusResponse;
   } catch (error) {
     console.error("Payment status check error:", error);
     throw new Error(
