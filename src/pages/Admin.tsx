@@ -57,6 +57,8 @@ const Admin = () => {
       checkout: 0,
     },
   });
+  const [transactionLogs, setTransactionLogs] = useState<any[]>([]);
+  const [errorLogs, setErrorLogs] = useState<any[]>([]);
 
   const navigate = useNavigate();
 
@@ -201,6 +203,27 @@ const Admin = () => {
       });
     }
   };
+
+  const addTransactionLog = (log: any) => {
+    setTransactionLogs((prev) => [log, ...prev.slice(0, 19)]); // Máximo 20 logs
+    toast({ title: "Nova venda registrada", description: log.message });
+  };
+
+  const addErrorLog = (log: any) => {
+    setErrorLogs((prev) => [log, ...prev.slice(0, 19)]);
+    toast({ title: "Erro registrado", description: log.message, variant: "destructive" });
+  };
+
+  useEffect(() => {
+    // Simulação: adicione logs de exemplo ao carregar
+    setTransactionLogs([
+      { time: new Date().toLocaleString(), message: "Venda Pix R$ 1999,00 - Pedido #ALF238763" },
+      { time: new Date().toLocaleString(), message: "Venda Cartão R$ 7999,00 - Pedido #ALF238764" },
+    ]);
+    setErrorLogs([
+      { time: new Date().toLocaleString(), message: "Falha ao processar pagamento do pedido #ALF238765" },
+    ]);
+  }, []);
 
   if (isLoading) {
     return (
@@ -881,6 +904,39 @@ const Admin = () => {
                           </span>
                         </div>
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="mt-6 bg-alphadarkblue border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white">Logs de Vendas</CardTitle>
+                    <CardDescription>Últimas vendas registradas</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {transactionLogs.length === 0 && <div className="text-gray-400 text-sm">Nenhuma venda registrada.</div>}
+                      {transactionLogs.map((log, idx) => (
+                        <div key={idx} className="text-green-400 text-xs border-b border-gray-700 pb-1 mb-1">
+                          <span className="font-mono">[{log.time}]</span> {log.message}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="mt-4 bg-alphadarkblue border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white">Logs de Erros</CardTitle>
+                    <CardDescription>Últimos erros do sistema</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {errorLogs.length === 0 && <div className="text-gray-400 text-sm">Nenhum erro registrado.</div>}
+                      {errorLogs.map((log, idx) => (
+                        <div key={idx} className="text-red-400 text-xs border-b border-gray-700 pb-1 mb-1">
+                          <span className="font-mono">[{log.time}]</span> {log.message}
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
