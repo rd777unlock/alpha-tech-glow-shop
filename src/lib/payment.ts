@@ -1,21 +1,19 @@
+import { supabase } from "@/integrations/supabase/client";
 import {
   PaymentRequest,
   PaymentResponse,
   PaymentStatusResponse,
 } from "@/types/payment";
 
-// TODO: Integrar pagamento real futuramente
-
 export async function processPayment(
   paymentRequest: PaymentRequest,
 ): Promise<PaymentResponse> {
   try {
-    // Mocked response for payment processing
-    const data = {
-      status: "approved",
-      paymentId: "mocked_payment_id",
-      orderNumber: paymentRequest.orderNumber,
-    };
+    const { data, error } = await supabase.functions.invoke("process-payment", {
+      body: paymentRequest,
+    });
+
+    if (error) throw error;
     return data as PaymentResponse;
   } catch (error) {
     console.error("Payment processing error:", error);
@@ -30,12 +28,14 @@ export async function checkPaymentStatus(
   paymentId: string,
 ): Promise<PaymentStatusResponse> {
   try {
-    // Mocked response for payment status check
-    const data = {
-      status: "approved",
-      paymentId: paymentId,
-      orderNumber: orderNumber,
-    };
+    const { data, error } = await supabase.functions.invoke(
+      "check-payment-status",
+      {
+        body: { orderNumber, paymentId },
+      },
+    );
+
+    if (error) throw error;
     return data as PaymentStatusResponse;
   } catch (error) {
     console.error("Payment status check error:", error);

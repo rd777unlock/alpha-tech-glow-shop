@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, ShoppingCart } from "lucide-react";
 import { useCart } from "../context/CartContext";
@@ -8,9 +8,14 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const { getItemCount } = useCart();
-<<<<<<< HEAD
-  const cartItemCount = getItemCount();
+  const [cartItemCount, setCartItemCount] = useState(0);
+  const [showSearch, setShowSearch] = useState(false);
   const navigate = useNavigate();
+
+  // Update cart count when items change
+  useEffect(() => {
+    setCartItemCount(getItemCount());
+  }, [getItemCount]);
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
@@ -38,22 +43,6 @@ const Header = () => {
       // Close mobile menu if open
       setIsMenuOpen(false);
     });
-=======
-  const [cartItemCount, setCartItemCount] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
-
-  // Update cart count when items change
-  useEffect(() => {
-    setCartItemCount(getItemCount());
-  }, [getItemCount]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // For now, we'll just navigate to the products page
-    // In the future, this could be enhanced to search properly
-    window.location.href = `/produtos?search=${encodeURIComponent(searchQuery)}`;
->>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
   };
 
   return (
@@ -101,35 +90,6 @@ const Header = () => {
         </nav>
 
         <div className="flex items-center space-x-4">
-<<<<<<< HEAD
-          <div className="relative hidden md:block">
-            <form onSubmit={handleSearch} className="flex items-center">
-              <input
-                type="text"
-                placeholder="Buscar produtos..."
-                className="bg-alphadarkblue text-white rounded-full pl-4 pr-10 py-2 w-40 focus:w-60 focus:outline-none focus:ring-1 focus:ring-alphablue transition-all duration-300"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button
-                type="submit"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white p-1 rounded-full hover:bg-white/10 transition-colors"
-                disabled={isSearching}
-              >
-                {isSearching ? (
-                  <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                ) : (
-                  <Search size={16} />
-                )}
-              </button>
-            </form>
-          </div>
-
-          <Link
-            to="/cart"
-            className="text-white p-2 rounded-full hover:bg-white/10 transition-colors relative"
-          >
-=======
           {showSearch ? (
             <form onSubmit={handleSearch} className="relative flex items-center">
               <input
@@ -156,7 +116,6 @@ const Header = () => {
           )}
           
           <Link to="/cart" className="text-white p-2 rounded-full hover:bg-white/10 transition-colors relative">
->>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
             <ShoppingCart size={20} />
             {cartItemCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-alphagreen text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
@@ -201,7 +160,6 @@ const Header = () => {
       {isMenuOpen && (
         <div className="md:hidden bg-alphadarkblue/95 backdrop-blur-md animate-fade-in">
           <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
-<<<<<<< HEAD
             {/* Mobile search */}
             <form
               onSubmit={handleSearch}
@@ -269,14 +227,6 @@ const Header = () => {
             >
               Admin
             </Link>
-=======
-            <Link to="/" className="text-white py-2 hover:text-gradient font-medium">Home</Link>
-            <Link to="/iphones" className="text-white py-2 hover:text-gradient font-medium">iPhones</Link>
-            <Link to="/acessorios" className="text-white py-2 hover:text-gradient font-medium">Acessórios</Link>
-            <Link to="/about" className="text-white py-2 hover:text-gradient font-medium">Sobre</Link>
-            <Link to="/support" className="text-white py-2 hover:text-gradient font-medium">Suporte</Link>
-            <Link to="/admin-login" className="text-white py-2 hover:text-gradient font-medium">Admin</Link>
->>>>>>> d7952de85cc29daa40d5d3636011b14b55a16e7f
           </div>
         </div>
       )}
