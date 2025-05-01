@@ -8,7 +8,6 @@ export async function processPayment(
   paymentRequest: PaymentRequest,
 ): Promise<PaymentResponse> {
   try {
-    // Supabase removido do projeto. Nenhuma importação ou uso de supabase.
     return {} as PaymentResponse;
   } catch (error) {
     console.error("Payment processing error:", error);
@@ -23,7 +22,6 @@ export async function checkPaymentStatus(
   paymentId: string,
 ): Promise<PaymentStatusResponse> {
   try {
-    // Supabase removido do projeto. Nenhuma importação ou uso de supabase.
     return {} as PaymentStatusResponse;
   } catch (error) {
     console.error("Payment status check error:", error);

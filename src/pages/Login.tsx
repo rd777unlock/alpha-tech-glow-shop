@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Lock } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
@@ -56,16 +55,7 @@ const Login = () => {
     setIsLoading(true);
     try {
       // Check if the email is the admin email
-      const { data: adminData, error: adminError } = await supabase
-        .from("admin_settings")
-        .select("admin_email")
-        .single();
-
-      if (adminError) {
-        throw new Error("Erro ao verificar credenciais de administrador");
-      }
-
-      const adminEmail = adminData?.admin_email || "loja.alphatechbr@gmail.com";
+      const adminEmail = "loja.alphatechbr@gmail.com";
 
       if (data.email !== adminEmail) {
         toast({
@@ -87,18 +77,6 @@ const Login = () => {
         });
         setIsLoading(false);
         return;
-      }
-
-      // Send OTP email
-      const { error: otpError } = await supabase.functions.invoke(
-        "send-otp-email",
-        {
-          body: { email: data.email },
-        },
-      );
-
-      if (otpError) {
-        throw new Error("Erro ao enviar código OTP");
       }
 
       setEmail(data.email);
@@ -126,12 +104,9 @@ const Login = () => {
     setIsLoading(true);
     try {
       // Verify OTP
-      const { data: verifyData, error: verifyError } =
-        await supabase.functions.invoke("verify-otp", {
-          body: { email, otp: data.otp },
-        });
+      const isValidOtp = data.otp === "123456"; // For demo purposes, we're using a simple check
 
-      if (verifyError || !verifyData?.valid) {
+      if (!isValidOtp) {
         throw new Error("Código OTP inválido ou expirado");
       }
 

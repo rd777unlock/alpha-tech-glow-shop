@@ -1,19 +1,15 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "../hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("loja.alphatechbr@gmail.com");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
-  const [showOtpInput, setShowOtpInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -23,7 +19,7 @@ const AdminLogin = () => {
 
     try {
       // For demo purposes, we'll use a hardcoded password
-      // In production, you would use proper authentication with Supabase
+      // In production, you would use proper authentication
       const demoPassword = "admin123"; // You should change this in production
 
       if (password !== demoPassword) {
@@ -35,47 +31,6 @@ const AdminLogin = () => {
         setIsLoading(false);
         return;
       }
-
-      // Send OTP email
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email,
-        options: {
-          shouldCreateUser: false,
-        },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Código enviado",
-        description: "Um código de verificação foi enviado para seu email.",
-      });
-      
-      setShowOtpInput(true);
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Login error:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro de autenticação",
-        description: "Ocorreu um erro ao enviar o código. Tente novamente.",
-      });
-      setIsLoading(false);
-    }
-  };
-
-  const verifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token: otp,
-        type: 'email',
-      });
-
-      if (error) throw error;
 
       // In a real application, you would validate if this user is an admin
       // Store admin session in localStorage
@@ -89,11 +44,11 @@ const AdminLogin = () => {
       
       navigate('/admin');
     } catch (error) {
-      console.error("OTP verification error:", error);
+      console.error("Login error:", error);
       toast({
         variant: "destructive",
-        title: "Código inválido",
-        description: "O código informado é inválido ou expirou.",
+        title: "Erro de autenticação",
+        description: "Ocorreu um erro ao autenticar. Tente novamente.",
       });
       setIsLoading(false);
     }
@@ -107,97 +62,50 @@ const AdminLogin = () => {
         <div className="w-full max-w-md bg-alphadarkblue p-8 rounded-xl shadow-lg">
           <h1 className="text-2xl font-bold text-white mb-6 text-center">Acesso Administrativo</h1>
           
-          {!showOtpInput ? (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-                  Email
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full"
-                  disabled
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
-                  Senha
-                </label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full"
-                  required
-                />
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-tech hover:opacity-90 transition-opacity"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processando...
-                  </>
-                ) : (
-                  "Enviar código de verificação"
-                )}
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={verifyOtp} className="space-y-4">
-              <div>
-                <label htmlFor="otp" className="block text-sm font-medium text-gray-300 mb-1">
-                  Código de verificação
-                </label>
-                <Input
-                  id="otp"
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  className="w-full"
-                  required
-                  placeholder="Digite o código recebido por email"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Digite o código de verificação enviado para {email}
-                </p>
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-tech hover:opacity-90 transition-opacity"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Verificando...
-                  </>
-                ) : (
-                  "Verificar e acessar"
-                )}
-              </Button>
-              
-              <Button 
-                type="button"
-                variant="outline" 
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                Email
+              </label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full"
-                onClick={() => setShowOtpInput(false)}
-                disabled={isLoading}
-              >
-                Voltar
-              </Button>
-            </form>
-          )}
+                disabled
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+                Senha
+              </label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full"
+                required
+              />
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full bg-gradient-tech hover:opacity-90 transition-opacity"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                "Acessar"
+              )}
+            </Button>
+          </form>
         </div>
       </main>
       

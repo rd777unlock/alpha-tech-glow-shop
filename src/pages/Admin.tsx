@@ -60,27 +60,20 @@ const Admin = () => {
 
   const navigate = useNavigate();
 
-  // Simulação de autenticação - em produção, use Supabase Auth
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Em produção, verifique a sessão do usuário com Supabase
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        // Adicione verificação de permissões aqui
-        setIsAuthenticated(true); // Para demonstração, sempre autenticar
+        setIsAuthenticated(true);
         setIsLoading(false);
       } catch (error) {
         console.error("Erro ao verificar autenticação:", error);
-        setIsAuthenticated(true); // Para demonstração, sempre autenticar
+        setIsAuthenticated(true);
         setIsLoading(false);
       }
     };
 
     checkAuth();
 
-    // Dados simulados para métricas
     setMetrics({
       totalSales: 12850,
       totalVisits: 2467,
@@ -132,7 +125,6 @@ const Admin = () => {
 
   const handleSaveProduct = () => {
     if (editingProduct) {
-      // Atualizar produto existente
       const updatedProducts = productsList.map((p) =>
         p.id === editingProduct.id ? editingProduct : p,
       );
@@ -143,7 +135,6 @@ const Admin = () => {
       });
       setEditingProduct(null);
     } else if (newProduct.name && newProduct.price && newProduct.imageUrl) {
-      // Adicionar novo produto
       const product = {
         ...newProduct,
         id: `product-${Date.now()}`,
@@ -268,10 +259,8 @@ const Admin = () => {
               </TabsTrigger>
             </TabsList>
 
-            {/* Aba de Produtos */}
             <TabsContent value="products">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Formulário de Produto */}
                 <Card className="lg:col-span-1 bg-alphadarkblue border-gray-700">
                   <CardHeader>
                     <CardTitle className="text-white">
@@ -506,7 +495,6 @@ const Admin = () => {
                   </CardContent>
                 </Card>
 
-                {/* Lista de Produtos */}
                 <div className="lg:col-span-2">
                   <Card className="bg-alphadarkblue border-gray-700">
                     <CardHeader>
@@ -588,7 +576,6 @@ const Admin = () => {
               </div>
             </TabsContent>
 
-            {/* Aba de Promoções */}
             <TabsContent value="promotions">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-1 bg-alphadarkblue border-gray-700">
@@ -727,7 +714,6 @@ const Admin = () => {
               </div>
             </TabsContent>
 
-            {/* Aba de Pagamentos */}
             <TabsContent value="payments">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-1 bg-alphadarkblue border-gray-700">
@@ -904,7 +890,6 @@ const Admin = () => {
               </div>
             </TabsContent>
 
-            {/* Aba de Configurações */}
             <TabsContent value="settings">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="bg-alphadarkblue border-gray-700">
@@ -949,7 +934,6 @@ const Admin = () => {
                                   "O email do administrador foi atualizado com sucesso.",
                               });
 
-                              // Update admin session
                               const adminSessionStr =
                                 localStorage.getItem("adminSession");
                               if (adminSessionStr) {
@@ -1094,10 +1078,8 @@ const Admin = () => {
               </div>
             </TabsContent>
 
-            {/* Aba de Métricas */}
             <TabsContent value="metrics">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Cards de Resumo */}
                 <Card className="bg-alphadarkblue border-gray-700">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
@@ -1188,7 +1170,6 @@ const Admin = () => {
                   </CardContent>
                 </Card>
 
-                {/* Gráficos */}
                 <Card className="lg:col-span-2 bg-alphadarkblue border-gray-700">
                   <CardHeader>
                     <CardTitle className="text-white">
