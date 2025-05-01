@@ -22,7 +22,13 @@ export async function checkPaymentStatus(
   paymentId: string,
 ): Promise<PaymentStatusResponse> {
   try {
-    return {} as PaymentStatusResponse;
+    const response = await fetch("/api/check-payment-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderNumber, paymentId }),
+    });
+    if (!response.ok) throw new Error("Erro ao consultar status do pagamento");
+    return await response.json();
   } catch (error) {
     console.error("Payment status check error:", error);
     throw new Error(
