@@ -28,7 +28,6 @@ import {
   ArrowLeft,
   ArrowRight,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 // Create a schema for the form validation
 const formSchema = z.object({
@@ -152,31 +151,8 @@ const Checkout = () => {
 
       // Attempt to send confirmation email
       try {
-        const { error } = await supabase.functions.invoke(
-          "send-confirmation-email",
-          {
-            body: {
-              email: data.email,
-              name: data.name,
-              orderNumber: orderNumber,
-              totalAmount: getCartTotal(),
-              paymentMethod: data.paymentMethod,
-              items: cartItems.map((item) => ({
-                name: item.product.name,
-                quantity: item.quantity,
-                price: item.product.discount
-                  ? Math.round(
-                      item.product.price * (1 - item.product.discount / 100),
-                    )
-                  : item.product.price,
-              })),
-            },
-          },
-        );
-
-        if (error) {
-          console.error("Error sending confirmation email:", error);
-        }
+        // Simulate sending confirmation email
+        console.log("Sending confirmation email to:", data.email);
       } catch (emailError) {
         console.error("Failed to send confirmation email:", emailError);
       }
