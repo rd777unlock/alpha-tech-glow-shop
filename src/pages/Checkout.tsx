@@ -28,6 +28,7 @@ import {
   ArrowLeft,
   ArrowRight,
 } from "lucide-react";
+import { usePayment } from "@/hooks/use-payment";
 
 // Create a schema for the form validation
 const formSchema = z.object({
@@ -91,6 +92,7 @@ const Checkout = () => {
 
   const { watch, trigger, getValues } = form;
   const paymentMethod = watch("paymentMethod");
+  const { handleStatusCheck, isCheckingStatus } = usePayment();
 
   useEffect(() => {
     if (cartItems.length === 0) {
@@ -957,10 +959,15 @@ const Checkout = () => {
                                   <Button
                                     type="button"
                                     className="w-full bg-alphablue text-white font-medium py-4 rounded-lg h-auto hover:opacity-90 transition-opacity"
-                                    onClick={checkPaymentStatus}
-                                    disabled={checkingPaymentStatus}
+                                    onClick={() =>
+                                      handleStatusCheck(
+                                        orderNumber,
+                                        paymentResponse?.paymentId,
+                                      )
+                                    }
+                                    disabled={isCheckingStatus}
                                   >
-                                    {checkingPaymentStatus ? (
+                                    {isCheckingStatus ? (
                                       <>
                                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                         Verificando pagamento...
@@ -1015,10 +1022,15 @@ const Checkout = () => {
                                   <Button
                                     type="button"
                                     className="w-full bg-alphablue text-white font-medium py-4 rounded-lg h-auto hover:opacity-90 transition-opacity"
-                                    onClick={checkPaymentStatus}
-                                    disabled={checkingPaymentStatus}
+                                    onClick={() =>
+                                      handleStatusCheck(
+                                        orderNumber,
+                                        paymentResponse?.paymentId,
+                                      )
+                                    }
+                                    disabled={isCheckingStatus}
                                   >
-                                    {checkingPaymentStatus ? (
+                                    {isCheckingStatus ? (
                                       <>
                                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                         Verificando pagamento...
