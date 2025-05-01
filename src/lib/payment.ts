@@ -8,7 +8,13 @@ export async function processPayment(
   paymentRequest: PaymentRequest,
 ): Promise<PaymentResponse> {
   try {
-    return {} as PaymentResponse;
+    const response = await fetch("/api/process-payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(paymentRequest),
+    });
+    if (!response.ok) throw new Error("Erro ao processar pagamento");
+    return await response.json();
   } catch (error) {
     console.error("Payment processing error:", error);
     throw new Error(
