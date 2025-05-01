@@ -65,6 +65,11 @@ const Checkout = () => {
       .toString()
       .padStart(6, "0")}`,
   );
+  const [paymentResponse, setPaymentResponse] = useState<any>(null);
+  const [pixQrCode, setPixQrCode] = useState("");
+  const [pixCode, setPixCode] = useState("");
+  const [boletoUrl, setBoletoUrl] = useState("");
+  const [boletoNumber, setBoletoNumber] = useState("");
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

@@ -61,19 +61,17 @@ const Admin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
+    const checkAuth = () => {
+      const adminSession = localStorage.getItem("adminSession");
+      if (adminSession) {
         setIsAuthenticated(true);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Erro ao verificar autenticação:", error);
-        setIsAuthenticated(true);
-        setIsLoading(false);
+      } else {
+        setIsAuthenticated(false);
+        navigate("/login");
       }
+      setIsLoading(false);
     };
-
     checkAuth();
-
     setMetrics({
       totalSales: 12850,
       totalVisits: 2467,
@@ -217,7 +215,6 @@ const Admin = () => {
   }
 
   if (!isAuthenticated) {
-    navigate("/");
     return null;
   }
 

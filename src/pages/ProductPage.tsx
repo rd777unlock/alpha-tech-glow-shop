@@ -17,7 +17,7 @@ const ProductPage = () => {
   // Find the product by ID
   const product = products.find(p => p.id === id);
   
-  const { addToCart, updateQuantity } = useCart();
+  const { cartItems, addToCart, updateQuantity } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [addingToCart, setAddingToCart] = useState(false);
   const [goingToCheckout, setGoingToCheckout] = useState(false);
