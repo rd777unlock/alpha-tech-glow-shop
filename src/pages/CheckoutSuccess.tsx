@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ShoppingBag, Clock, Truck } from "lucide-react";
+import { useCart } from "../context/CartContext";
 
 type LocationState = {
   orderNumber: string;

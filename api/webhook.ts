@@ -1,7 +1,7 @@
 // Vercel Serverless Function: Recebe notificações do gateway de pagamento
 // Exemplo de uso: POST /api/webhook
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export default function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Método não permitido' });
     return;
