@@ -186,19 +186,66 @@ const Checkout = () => {
     }
   };
 
-  const onSubmit = (data: FormData) => {
-    if (cartItems.length === 0) {
-      toast({
-        title: "Carrinho vazio",
-        description:
-          "Adicione produtos ao carrinho antes de finalizar a compra.",
-        variant: "destructive",
+  const handleConfirmPayment = async (data: FormData) => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/process-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderNumber,
+          amount: getCartTotal(),
+          paymentMethod: data.paymentMethod,
+          customer: {
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            address: data.address,
+            city: data.city,
+            state: data.state,
+            zipCode: data.zipCode,
+          },
+          card: data.paymentMethod === "credit" ? {
+            number: data.cardNumber,
+            name: data.cardName,
+            expiry: data.cardExpiry,
+            cvv: data.cardCvv,
+          } : undefined,
+          cart: cartItems.map(item => ({
+            id: item.product.id,
+            name: item.product.name,
+            price: item.product.discount
+              ? Math.round(item.product.price * (1 - item.product.discount / 100))
+              : item.product.price,
+            quantity: item.quantity,
+          })),
+        }),
       });
-      return;
+      const result = await response.json();
+      setPaymentResponse(result);
+      if (data.paymentMethod === "pix") {
+        setPixQrCode(result.pixQrCode || "");
+        setPixCode(result.pixCode || "");
+        if (result.status === "approved") {
+          clearCart();
+          navigate("/checkout/success", { state: { orderNumber, paymentMethod: "pix", total: getCartTotal() } });
+          return;
+        }
+      }
+      if (data.paymentMethod === "boleto") {
+        setBoletoUrl(result.boletoUrl || "");
+        setBoletoNumber(result.boletoNumber || "");
+      }
+      if (data.paymentMethod === "credit" && result.status === "approved") {
+        clearCart();
+        navigate("/checkout/success", { state: { orderNumber, paymentMethod: "credit", total: getCartTotal() } });
+        return;
+      }
+    } catch (error) {
+      toast({ title: "Erro ao processar pagamento", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Process the payment
-    processPayment(data);
   };
 
   if (cartItems.length === 0) {
@@ -265,7 +312,7 @@ const Checkout = () => {
                 <div className="bg-alphadarkblue rounded-xl p-6 mb-6">
                   <Form {...form}>
                     <form
-                      onSubmit={form.handleSubmit(onSubmit)}
+                      onSubmit={form.handleSubmit(handleConfirmPayment)}
                       className="space-y-6"
                     >
                       {/* Step 1: Personal Data */}
