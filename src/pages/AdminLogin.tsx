@@ -16,32 +16,24 @@ const AdminLogin = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      // For demo purposes, we'll use a hardcoded password
-      // In production, you would use proper authentication
-      const demoPassword = "admin123"; // You should change this in production
-
-      if (password !== demoPassword) {
+      const demoPassword = "admin123"; // Troque para sua senha real
+      if (email !== "loja.alphatechbr@gmail.com" || password !== demoPassword) {
         toast({
           variant: "destructive",
           title: "Erro de autenticação",
-          description: "Senha incorreta. Tente novamente.",
+          description: "Email ou senha incorretos. Tente novamente.",
         });
         setIsLoading(false);
         return;
       }
-
-      // In a real application, you would validate if this user is an admin
-      // Store admin session in localStorage
+      // Autenticação direta sem OTP
       localStorage.setItem('adminAuthenticated', 'true');
       localStorage.setItem('adminEmail', email);
-      
       toast({
         title: "Autenticado com sucesso",
         description: "Bem-vindo ao painel administrativo.",
       });
-      
       navigate('/admin');
     } catch (error) {
       console.error("Login error:", error);
@@ -50,6 +42,7 @@ const AdminLogin = () => {
         title: "Erro de autenticação",
         description: "Ocorreu um erro ao autenticar. Tente novamente.",
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -57,11 +50,9 @@ const AdminLogin = () => {
   return (
     <div className="min-h-screen bg-alphadark flex flex-col">
       <Header />
-      
       <main className="flex-grow pt-24 pb-16 flex items-center justify-center px-4">
         <div className="w-full max-w-md bg-alphadarkblue p-8 rounded-xl shadow-lg">
           <h1 className="text-2xl font-bold text-white mb-6 text-center">Acesso Administrativo</h1>
-          
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
@@ -73,10 +64,9 @@ const AdminLogin = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full"
-                disabled
+                required
               />
             </div>
-            
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
                 Senha
@@ -88,9 +78,9 @@ const AdminLogin = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full"
                 required
+                autoComplete="current-password"
               />
             </div>
-            
             <Button 
               type="submit" 
               className="w-full bg-gradient-tech hover:opacity-90 transition-opacity"
@@ -108,7 +98,6 @@ const AdminLogin = () => {
           </form>
         </div>
       </main>
-      
       <Footer />
     </div>
   );
