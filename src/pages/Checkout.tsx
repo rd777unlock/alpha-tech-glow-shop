@@ -195,56 +195,70 @@ const Checkout = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          orderNumber,
           amount: getCartTotal(),
           paymentMethod: data.paymentMethod,
+          items: cartItems.map(item => ({
+            id: item.product.id,
+            name: item.product.name,
+            price: item.product.price,
+            quantity: item.quantity
+          })),
           customer: {
             name: data.name,
             email: data.email,
             phone: data.phone,
-            address: data.address,
-            city: data.city,
-            state: data.state,
-            zipCode: data.zipCode,
-          },
-          card: data.paymentMethod === "credit" ? {
-            number: data.cardNumber,
-            name: data.cardName,
-            expiry: data.cardExpiry,
-            cvv: data.cardCvv,
-          } : undefined,
-          cart: cartItems.map(item => ({
-            id: item.product.id,
-            name: item.product.name,
-            price: item.product.discount
-              ? Math.round(item.product.price * (1 - item.product.discount / 100))
-              : item.product.price,
-            quantity: item.quantity,
-          })),
-        }),
+            document: data.document
+          }
+        })
       });
+  
       const result = await response.json();
+      console.log("Resposta do processamento:", result);
+  
+      if (!response.ok) {
+        throw new Error(result.error || "Erro ao processar pagamento");
+      }
+  
       setPaymentResponse(result);
+  
+      // Trata resposta do PIX
       if (data.paymentMethod === "pix") {
         setPixQrCode(result.pixQrCode || "");
         setPixCode(result.pixCode || "");
-        if (result.status === "approved") {
-          clearCart();
-          navigate("/checkout/success", { state: { orderNumber, paymentMethod: "pix", total: getCartTotal() } });
-          return;
-        }
+        toast({
+          title: "Pagamento PIX gerado",
+          description: "Use o QR Code ou código PIX para pagar"
+        });
       }
+  
+      // Trata resposta do boleto
       if (data.paymentMethod === "boleto") {
         setBoletoUrl(result.boletoUrl || "");
         setBoletoNumber(result.boletoNumber || "");
+        toast({
+          title: "Boleto gerado",
+          description: "Você pode visualizar ou baixar seu boleto agora"
+        });
       }
-      if (data.paymentMethod === "credit" && result.status === "approved") {
+  
+      // Se for aprovado direto (improvável para PIX/boleto)
+      if (result.status === "approved" || result.status === "paid") {
         clearCart();
-        navigate("/checkout/success", { state: { orderNumber, paymentMethod: "credit", total: getCartTotal() } });
-        return;
+        navigate("/checkout/success", { 
+          state: { 
+            orderNumber, 
+            paymentMethod: data.paymentMethod 
+          }
+        });
       }
+  
     } catch (error) {
-      toast({ title: "Erro ao processar pagamento", variant: "destructive" });
+      console.error("Erro no pagamento:", error);
+      toast({
+        title: "Erro no pagamento",
+        description: error instanceof Error ? error.message : "Tente novamente",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
