@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -17,6 +17,28 @@ import { toast } from "@/hooks/use-toast";
 import { Loader2, Lock } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  PlusCircle,
+  Edit,
+  Trash2,
+  BarChart3,
+  Package,
+  ShoppingCart,
+  CreditCard,
+  Users,
+  DollarSign,
+} from "lucide-react";
+import products, { Product } from "../data/products";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),

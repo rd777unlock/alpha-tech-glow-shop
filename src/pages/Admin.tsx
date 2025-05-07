@@ -32,11 +32,12 @@ import products, { Product } from "../data/products";
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Adicione estas linhas para corrigir o erro:
   const [adminEmail, setAdminEmail] = useState("loja.alphatechbr@gmail.com");
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+  
+  const [webhookSecret, setWebhookSecret] = useState("");
+  const [isUpdatingWebhook, setIsUpdatingWebhook] = useState(false);
 
   const [productsList, setProductsList] = useState<Product[]>([...products]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
