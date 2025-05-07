@@ -25,12 +25,19 @@ import {
   CreditCard,
   Users,
   DollarSign,
+  Loader2,
 } from "lucide-react";
 import products, { Product } from "../data/products";
 
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Adicione estas linhas para corrigir o erro:
+  const [adminEmail, setAdminEmail] = useState("loja.alphatechbr@gmail.com");
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+
   const [productsList, setProductsList] = useState<Product[]>([...products]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
