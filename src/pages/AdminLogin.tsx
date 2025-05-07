@@ -28,8 +28,14 @@ const AdminLogin = () => {
         return;
       }
       // Autenticação direta sem OTP
-      localStorage.setItem('adminAuthenticated', 'true');
-      localStorage.setItem('adminEmail', email);
+      localStorage.setItem(
+        "adminSession",
+        JSON.stringify({
+          email,
+          timestamp: Date.now(),
+          expiresAt: Date.now() + 3600000,
+        }),
+      );
       toast({
         title: "Autenticado com sucesso",
         description: "Bem-vindo ao painel administrativo.",
