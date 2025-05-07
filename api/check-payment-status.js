@@ -7,34 +7,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { orderNumber, paymentId } = req.body;
-    if (!orderNumber || !paymentId) {
-      return res.status(400).json({ error: "orderNumber e paymentId são obrigatórios" });
-    }
-
+    const { paymentId } = req.body;
     const url = `https://api.axionpay.com.br/v1/transactions/${paymentId}`;
     const publicKey = process.env.AXIONPAY_PUBLIC_KEY;
     const secretKey = process.env.AXIONPAY_SECRET_KEY;
-    const auth =
-      "Basic " + Buffer.from(publicKey + ":" + secretKey).toString("base64");
+    const auth = "Basic " + Buffer.from(publicKey + ":" + secretKey).toString("base64");
 
-    const gatewayRes = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: auth,
-        "Content-Type": "application/json",
-      },
+    const response = await fetch(url, {
+      headers: { Authorization: auth }
     });
 
-    if (!gatewayRes.ok) {
-      return res.status(gatewayRes.status).json({ error: "Erro ao consultar status do pagamento" });
-    }
-
-    const gatewayData = await gatewayRes.json();
-    // Adapte a resposta conforme o que o AxionPay retorna
-    res.status(200).json(gatewayData);
+    const data = await response.json();
+    res.status(200).json(data);
   } catch (error) {
-    console.error("Erro ao consultar status do pagamento:", error);
-    res.status(500).json({ error: "Erro ao consultar status do pagamento" });
+    res.status(500).json({ error: "Erro ao verificar status" });
   }
 }

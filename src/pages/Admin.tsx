@@ -73,15 +73,38 @@ const Admin = () => {
   useEffect(() => {
     const checkAuth = () => {
       const adminSession = localStorage.getItem("adminSession");
-      if (adminSession) {
+      
+      if (!adminSession) {
+        setIsAuthenticated(false);
+        navigate("/login");
+        return;
+      }
+
+      try {
+        const session = JSON.parse(adminSession);
+        const now = Date.now();
+        
+        // Verifica se a sessão expirou (1 hora)
+        if (now > session.expiresAt) {
+          localStorage.removeItem("adminSession");
+          setIsAuthenticated(false);
+          navigate("/login");
+          return;
+        }
+
         setIsAuthenticated(true);
-      } else {
+      } catch (error) {
+        localStorage.removeItem("adminSession");
         setIsAuthenticated(false);
         navigate("/login");
       }
       setIsLoading(false);
     };
+
     checkAuth();
+  }, [navigate]);
+
+  useEffect(() => {
     setMetrics({
       totalSales: 12850,
       totalVisits: 2467,

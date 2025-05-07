@@ -8,70 +8,48 @@ export default async function handler(req, res) {
   }
 
   try {
-    const {
-      orderNumber,
-      amount,
-      paymentMethod,
-      customer,
-      card,
-      cart,
-    } = req.body;
+    const { amount, paymentMethod, items, customer } = req.body;
 
     const url = "https://api.axionpay.com.br/v1/transactions";
     const publicKey = process.env.AXIONPAY_PUBLIC_KEY;
     const secretKey = process.env.AXIONPAY_SECRET_KEY;
-    const auth =
-      "Basic " + Buffer.from(publicKey + ":" + secretKey).toString("base64");
+    const auth = "Basic " + Buffer.from(publicKey + ":" + secretKey).toString("base64");
 
-    // Monte o payload conforme a documentação do AxionPay
     const payload = {
       amount,
       paymentMethod,
-      orderNumber,
-      customer,
-      card,
-      cart,
+      pix: paymentMethod === "pix" ? { expiresInDays: 1 } : undefined,
+      items: items.map(item => ({
+        title: item.name,
+        unitPrice: Math.round(item.price * 100),
+        quantity: item.quantity,
+        tangible: true,
+        externalRef: item.id.toString()
+      })),
+      customer: {
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        document: {
+          number: customer.document,
+          type: "cpf"
+        }
+      },
+      postbackUrl: `${process.env.NEXT_PUBLIC_API_URL}/api/webhook`
     };
 
-    const gatewayRes = await fetch(url, {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
-        Authorization: auth,
+        "Authorization": auth,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
 
-    const gatewayData = await gatewayRes.json();
-
-    // Padroniza a resposta para o frontend
-    let response = {
-      status: gatewayData.status || gatewayData.transactionStatus || "pending",
-      paymentId: gatewayData.id || gatewayData.paymentId || null,
-      message: gatewayData.message || "",
-    };
-
-    // PIX
-    if (paymentMethod === "pix" && gatewayData.pix) {
-      response.pixQrCode = gatewayData.pix.qrCodeImageUrl || gatewayData.pix.qr_code_image_url || gatewayData.pix.qr_code_url || "";
-      response.pixCode = gatewayData.pix.qrCode || gatewayData.pix.qr_code || "";
-    }
-
-    // Boleto
-    if (paymentMethod === "boleto" && gatewayData.boleto) {
-      response.boletoUrl = gatewayData.boleto.url || gatewayData.boleto.boleto_url || "";
-      response.boletoNumber = gatewayData.boleto.number || gatewayData.boleto.boleto_number || "";
-    }
-
-    // Cartão de crédito
-    if (paymentMethod === "credit" && gatewayData.card) {
-      response.cardLast4 = gatewayData.card.last4 || "";
-      response.authCode = gatewayData.card.authCode || gatewayData.card.auth_code || "";
-    }
-
-    res.status(200).json(response);
+    const data = await response.json();
+    res.status(200).json(data);
   } catch (error) {
-    console.error("Erro ao processar pagamento:", error);
     res.status(500).json({ error: "Erro ao processar pagamento" });
   }
 }

@@ -1,24 +1,38 @@
 // Vercel Serverless Function: Recebe notificações do gateway de pagamento
 // Exemplo de uso: POST /api/webhook
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Método não permitido' });
-    return;
+    return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  // Recebe o payload do gateway
-  const event = req.body;
+  try {
+    const webhook = req.body;
+    console.log('Webhook recebido:', webhook);
 
-  // Aqui você pode validar a assinatura do webhook, se o gateway fornecer
-  // Exemplo: if (!isValidSignature(req)) return res.status(401).json({ error: 'Assinatura inválida' });
+    const { data } = webhook;
 
-  // Exemplo: Atualize o status do pedido em um banco de dados ou arquivo
-  // await updateOrderStatus(event.orderId, event.status);
+    switch (data.status) {
+      case 'paid':
+      case 'approved':
+        // Atualizar pedido como pago
+        console.log('Pagamento aprovado:', data.id);
+        break;
+      
+      case 'refused':
+        // Atualizar pedido como recusado
+        console.log('Pagamento recusado:', data.id);
+        break;
+      
+      case 'waiting_payment':
+        // Aguardando pagamento (PIX/Boleto)
+        console.log('Aguardando pagamento:', data.id);
+        break;
+    }
 
-  // MOCK: Apenas loga o evento recebido
-  console.log('Webhook recebido:', event);
-
-  // Retorna 200 para o gateway
-  return res.status(200).json({ received: true });
+    return res.status(200).json({ received: true });
+  } catch (error) {
+    console.error('Erro no webhook:', error);
+    return res.status(500).json({ error: 'Erro interno' });
+  }
 }

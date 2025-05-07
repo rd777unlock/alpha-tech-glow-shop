@@ -1,38 +1,33 @@
 export interface PaymentRequest {
-  orderNumber: string;
   amount: number;
-  paymentMethod: "credit" | "pix" | "boleto";
-  customerName: string;
-  customerEmail: string;
-  customerPhone?: string;
-  shippingAddress?: {
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
-  cardDetails?: {
-    number: string;
+  paymentMethod: "pix" | "credit_card" | "boleto";
+  items: {
+    title: string;
+    unitPrice: number;
+    quantity: number;
+    tangible: boolean;
+    externalRef: string;
+  }[];
+  customer: {
     name: string;
-    expiry: string;
-    cvv: string;
+    email: string;
+    phone: string;
+    document: {
+      number: string;
+      type: "cpf";
+    };
   };
+  externalRef: string;
 }
 
 export interface PaymentResponse {
-  success: boolean;
+  status: "waiting_payment" | "pending" | "approved" | "refused" | "paid" | "cancelled";
   paymentId: string;
-  status: "pending" | "approved" | "declined" | "failed";
   message: string;
-  transactionDetails?: {
-    cardLast4?: string;
-    authCode?: string;
-    pixCode?: string;
-    qrCodeUrl?: string;
-    boletoNumber?: string;
-    boletoUrl?: string;
-    expiresAt?: string;
-  };
+  pixQrCode?: string;
+  pixCode?: string;
+  boletoUrl?: string;
+  boletoNumber?: string;
 }
 
 export interface PaymentStatusResponse {

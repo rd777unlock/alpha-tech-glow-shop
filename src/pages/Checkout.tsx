@@ -250,6 +250,42 @@ const Checkout = () => {
     }
   };
 
+  const handlePayment = async (formData) => {
+    try {
+      const response = await fetch("/api/process-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: total,
+          paymentMethod: formData.paymentMethod,
+          items: cartItems,
+          customer: {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            document: { number: formData.document, type: "cpf" }
+          }
+        })
+      });
+  
+      const data = await response.json();
+      
+      if (data.status === "paid" || data.status === "approved") {
+        // Pagamento aprovado
+        router.push("/success");
+      } else if (data.paymentMethod === "pix") {
+        // Mostrar QR Code do PIX
+        setPixQrCode(data.pixQrCode);
+        setPixCode(data.pixCode);
+      } else if (data.paymentMethod === "boleto") {
+        // Mostrar link do boleto
+        window.open(data.boletoUrl, "_blank");
+      }
+    } catch (error) {
+      console.error("Erro no pagamento:", error);
+    }
+  };
+
   if (cartItems.length === 0) {
     navigate("/cart");
     return null;
